@@ -6,6 +6,7 @@
     "dev": "concurrently \"npm run dev:server\" \"next dev\"",
     "dev:server": "cd server && npm run dev",
     "dev:next": "next dev",
+    "build:server": "echo \"no-op server build\"",
     "build": "npm run build:server && next build",
     "start": "next start",
     "lint": "next lint",

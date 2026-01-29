@@ -17,11 +17,11 @@ export function Header() {
 
       <div className="flex items-center gap-3 bg-surface-secondary/40 p-1.5 pr-4 rounded-full border border-border-primary">
         <div className="w-8 h-8 rounded-full bg-brand-primary flex items-center justify-center text-sm font-bold shadow-lg">
-          JS
+          KS
         </div>
         <div className="flex flex-col">
           <span className="text-sm font-semibold leading-tight">
-            Jean-Sébastien
+            Kevin Abaskaran
           </span>
           <span className="text-xs text-text-tertiary leading-tight">
             ADMIN
