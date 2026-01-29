@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import { X, Upload, AlertCircle, CheckCircle2, FileText } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { cn } from "@/lib/utils";
+import { Button } from "@/src/components/ui/Button";
+import { cn } from "@/src/lib/utils";
 
 interface LeadImportModalProps {
   isOpen: boolean;

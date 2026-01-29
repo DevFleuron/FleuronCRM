@@ -2,9 +2,9 @@
 
 import React from "react";
 import { MessageSquare, Mail, Eye, MoreVertical } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
-import type { Lead } from "@/types";
-import { formatDate, formatPhone, getRapportColor } from "@/lib/utils";
+import { Badge } from "@/src/components/ui/Badge";
+import type { Lead } from "@/src/types";
+import { formatDate, formatPhone, getRapportColor } from "@/src/lib/utils";
 
 interface LeadCardProps {
   lead: Lead;

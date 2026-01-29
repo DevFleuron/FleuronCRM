@@ -2,9 +2,9 @@
 
 import React from "react";
 import { MessageSquare, Mail } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
-import { formatDate } from "@/lib/utils";
-import type { RecentCampaign } from "@/types";
+import { Badge } from "@/src/components/ui/Badge";
+import { formatDate } from "@/src/lib/utils";
+import type { RecentCampaign } from "@/src/types";
 
 interface RecentCampaignsProps {
   campaigns: RecentCampaign[];

@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { cn } from "@/src/lib/utils";
 
 const navigation = [
   {

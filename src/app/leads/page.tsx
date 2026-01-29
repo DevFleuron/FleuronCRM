@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { LeadFiltersBar } from "@/components/features/leads/LeadFilters";
-import { LeadTable } from "@/components/features/leads/LeadTable";
-import { LeadImportModal } from "@/components/features/leads/LeadImportModal";
-import type { Lead, LeadFilters } from "@/types";
+import { LeadFiltersBar } from "@/src/components/features/leads/LeadFilters";
+import { LeadTable } from "@/src/components/features/leads/LeadTable";
+import { LeadImportModal } from "@/src/components/features/leads/LeadImportModal";
+import type { Lead, LeadFilters } from "@/src/types";
 
 // Données mockées (gardées telles quelles)
 const MOCK_LEADS: Lead[] = [

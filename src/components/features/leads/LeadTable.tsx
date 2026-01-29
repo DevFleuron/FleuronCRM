@@ -2,10 +2,10 @@
 
 import React from "react";
 import { MessageSquare, Mail } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/src/components/ui/Button";
 import { LeadRow } from "./LeadRow";
 import { LeadCard } from "./LeadCard";
-import type { Lead } from "@/types";
+import type { Lead } from "@/src/types";
 
 interface LeadTableProps {
   leads: Lead[];
