@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Sidebar } from "@/src/components/Sidebar";
-import { Header } from "@/src/components/Header";
+import { ClientLayout } from "@/src/components/ClientLayout";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -19,14 +18,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className={inter.variable}>
-        <div className="min-h-screen custom-scrollbar bg-[#0a0a0c] overflow-hidden">
-          <Sidebar />
-
-          <main className="transition-all duration-300 lg:pl-64">
-            <Header />
-            <div className="p-4 md:p-6 lg:p-8">{children}</div>
-          </main>
-        </div>
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   );

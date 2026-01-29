@@ -8,8 +8,6 @@ import {
   History,
   Users,
   Settings,
-  Menu,
-  X,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/src/lib/utils";
@@ -37,31 +35,23 @@ const navigation = [
   { id: "leads", name: "Fichier NRP", icon: Users, href: "/leads" },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  isMobileMenuOpen: boolean;
+  onClose: () => void;
+}
+
+export function Sidebar({ isMobileMenuOpen, onClose }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(true);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
   return (
     <>
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-surface-primary border border-border-primary rounded-lg"
-      >
-        {isMobileMenuOpen ? (
-          <X className="w-6 h-6" />
-        ) : (
-          <Menu className="w-6 h-6" />
-        )}
-      </button>
-
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div
           className="lg:hidden fixed inset-0 bg-black/60 z-40"
-          onClick={() => setIsMobileMenuOpen(false)}
+          onClick={onClose}
         />
       )}
 
@@ -82,7 +72,7 @@ export function Sidebar() {
           </div>
           {isOpen && (
             <span className="font-bold text-xl bg-gradient-to-r from-white to-text-secondary bg-clip-text text-transparent uppercase tracking-tight">
-              Fleuron HUB
+              Fleuron Hub{" "}
             </span>
           )}
         </div>
@@ -98,7 +88,7 @@ export function Sidebar() {
                 key={item.id}
                 onClick={() => {
                   router.push(item.href);
-                  setIsMobileMenuOpen(false);
+                  onClose(); // Ferme le menu sur mobile après navigation
                 }}
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200",

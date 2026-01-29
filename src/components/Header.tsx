@@ -1,22 +1,36 @@
 "use client";
 
 import React, { useState } from "react";
-import { Search, X } from "lucide-react";
+import { Search, X, Menu } from "lucide-react";
 
-export function Header() {
+interface HeaderProps {
+  onMenuClick: () => void;
+}
+
+export function Header({ onMenuClick }: HeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   return (
-    <header className="h-20 md:h-20 border-b border-border-primary glass-effect sticky top-0 z-40 px-4 md:px-8 flex items-center justify-between gap-4">
-      {/* Mobile: Search Icon + User Badge */}
-      <div className="flex items-center justify-between w-full lg:hidden">
-        {/* Search Icon - Opens modal on mobile */}
-        <button
-          onClick={() => setIsSearchOpen(true)}
-          className="p-2 hover:bg-surface-hover rounded-lg transition-colors"
-        >
-          <Search className="w-5 h-5 text-text-secondary" />
-        </button>
+    <header className="h-16 md:h-20 border-b border-border-primary glass-effect sticky top-0 z-40 px-4 md:px-8 flex items-center justify-between gap-4">
+      {/* Mobile: Menu Burger + Search Icon + User Badge */}
+      <div className="flex items-center justify-between w-full lg:hidden gap-3">
+        <div className="flex items-center gap-3">
+          {/* Menu Burger - Mobile only */}
+          <button
+            onClick={onMenuClick}
+            className="p-2 hover:bg-surface-hover rounded-lg transition-colors"
+          >
+            <Menu className="w-5 h-5 text-text-secondary" />
+          </button>
+
+          {/* Search Icon - Opens modal on mobile */}
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className="p-2 hover:bg-surface-hover rounded-lg transition-colors"
+          >
+            <Search className="w-5 h-5 text-text-secondary" />
+          </button>
+        </div>
 
         {/* User Badge - Mobile */}
         <div className="flex items-center gap-2 bg-surface-secondary/40 p-1.5 pr-3 rounded-full border border-border-primary">
