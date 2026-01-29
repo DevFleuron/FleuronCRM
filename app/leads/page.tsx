@@ -6,7 +6,7 @@ import { LeadTable } from "@/components/features/leads/LeadTable";
 import { LeadImportModal } from "@/components/features/leads/LeadImportModal";
 import type { Lead, LeadFilters } from "@/types";
 
-// Données mockées pour le développement
+// Données mockées (gardées telles quelles)
 const MOCK_LEADS: Lead[] = [
   {
     _id: "1",
@@ -80,25 +80,15 @@ const MOCK_LEADS: Lead[] = [
 ];
 
 export default function LeadsPage() {
-  const [leads, setLeads] = useState<Lead[]>(MOCK_LEADS);
+  const [leads] = useState<Lead[]>(MOCK_LEADS);
   const [filters, setFilters] = useState<LeadFilters>({});
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
-  // Filtrage des leads
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
-      // Filtre par rapport
-      if (filters.rapport && lead.rapport !== filters.rapport) {
-        return false;
-      }
-
-      // Filtre par source
-      if (filters.source && lead.source !== filters.source) {
-        return false;
-      }
-
-      // Filtre par date
+      if (filters.rapport && lead.rapport !== filters.rapport) return false;
+      if (filters.source && lead.source !== filters.source) return false;
       if (filters.dateFrom) {
         const dateFrom = new Date(filters.dateFrom);
         if (new Date(lead.date) < dateFrom) return false;
@@ -107,24 +97,15 @@ export default function LeadsPage() {
         const dateTo = new Date(filters.dateTo);
         if (new Date(lead.date) > dateTo) return false;
       }
-
-      // Filtre par type installation
       if (
         filters.typeInstallation &&
         lead.typeInstallation !== filters.typeInstallation
-      ) {
+      )
         return false;
-      }
-
-      // Filtre SMS envoyé
       if (filters.smsEnvoye === "yes" && !lead.smsEnvoye) return false;
       if (filters.smsEnvoye === "no" && lead.smsEnvoye) return false;
-
-      // Filtre Email envoyé
       if (filters.emailEnvoye === "yes" && !lead.emailEnvoye) return false;
       if (filters.emailEnvoye === "no" && lead.emailEnvoye) return false;
-
-      // Filtre par recherche textuelle
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
         return (
@@ -135,7 +116,6 @@ export default function LeadsPage() {
           lead.ref.includes(searchLower)
         );
       }
-
       return true;
     });
   }, [leads, filters]);
@@ -159,50 +139,41 @@ export default function LeadsPage() {
   };
 
   const handleImport = async (file: File) => {
-    // TODO: Implémenter l'import réel avec ton collègue backend
     console.log("Importing file:", file.name);
-
-    // Simuler un délai
     await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    // Pour l'instant, on simule l'ajout de leads
-    // Ton collègue backend fera le parsing réel
     alert("Import simulé ! Ton collègue backend implémentera le vrai parsing.");
   };
 
   const handleSendSMS = (lead: Lead) => {
     console.log("Send SMS to:", lead);
-    // TODO: Ouvrir un modal de sélection de template SMS
   };
 
   const handleSendEmail = (lead: Lead) => {
     console.log("Send Email to:", lead);
-    // TODO: Ouvrir un modal de sélection de template Email
   };
 
   const handleViewDetails = (lead: Lead) => {
     console.log("View details:", lead);
-    // TODO: Ouvrir un modal avec tous les détails du lead
   };
 
   const handleBulkSMS = () => {
     const selected = leads.filter((lead) => selectedIds.includes(lead._id!));
     console.log("Send SMS to selected:", selected);
-    // TODO: Ouvrir wizard de campagne SMS avec leads pré-sélectionnés
   };
 
   const handleBulkEmail = () => {
     const selected = leads.filter((lead) => selectedIds.includes(lead._id!));
     console.log("Send Email to selected:", selected);
-    // TODO: Ouvrir wizard de campagne Email avec leads pré-sélectionnés
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold mb-2">Leads</h1>
-        <p className="text-text-secondary">Gestion des clients</p>
+        <h1 className="text-2xl md:text-3xl font-bold mb-2">Leads NRP</h1>
+        <p className="text-text-secondary text-sm md:text-base">
+          Gestion et relance des clients Ne Répond Pas
+        </p>
       </div>
 
       {/* Filtres */}
