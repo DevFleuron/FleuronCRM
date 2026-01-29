@@ -3,26 +3,26 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"next dev\"",
-    "dev:server": "cd server && npm run dev",
-    "dev:next": "next dev",
-    "build:server": "echo \"no-op server build\"",
-    "build": "npm run build:server && next build",
-    "start": "next start",
+    "dev": "concurrently \"next dev -p 3000\" \"npm run server:dev\"",
+    "build": "next build && npm run server:build",
+    "start": "next start -p 3000",
     "lint": "next lint",
-    "install:all": "npm install && cd server && npm install"
+    "server:dev": "cross-env PORT=5000 NODE_ENV=development nodemon --cwd server --exec ts-node src/server.ts",
+    "server:build": "tsc --project server/tsconfig.json",
+    "server:start": "cross-env PORT=5000 NODE_ENV=production node server/dist/server.js",
+    "format": "prettier --write ."
   },
   "dependencies": {
+    "clsx": "^2.1.1",
     "cors": "^2.8.6",
     "csv-parser": "^3.2.0",
+    "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
-    "mongodb": "^7.0.0",
-    "mongoose": "^9.1.5",
-    "clsx": "^2.1.1",
-    "date-fns": "^4.1.0",
     "framer-motion": "^12.29.2",
     "lucide-react": "^0.563.0",
+    "mongodb": "^7.0.0",
+    "mongoose": "^9.1.5",
     "next": "16.1.6",
     "nodemon": "^3.1.11",
     "react": "19.2.3",
@@ -45,6 +45,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }
