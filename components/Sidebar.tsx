@@ -32,7 +32,7 @@ const navigation = [
     icon: History,
     href: "/campaigns/history",
   },
-  { id: "leads", name: "Fichier NRP", icon: Users, href: "/leads" },
+  { id: "leads", name: "Leads", icon: Users, href: "/leads" },
 ];
 
 export function Sidebar() {
@@ -53,7 +53,7 @@ export function Sidebar() {
         </div>
         {isOpen && (
           <span className="font-bold text-xl bg-gradient-to-r from-white to-text-secondary bg-clip-text text-transparent uppercase tracking-tight">
-            Campaign Pro
+            Fleuron HUB
           </span>
         )}
       </div>
