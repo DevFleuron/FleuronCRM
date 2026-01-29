@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"next dev\"",
-    "dev:server": "cd server && npm run dev",
-    "dev:next": "next dev",
-    "build": "npm run build:server && next build",
-    "start": "next start",
-    "lint": "next lint",
-    "install:all": "npm install && cd server && npm install"
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:app\"",
+    "dev:server": "npm --prefix server run dev",
+    "dev:app": "npm --prefix app run dev",
+    "build": "npm run build:server && npm run build:app",
+    "build:server": "npm --prefix server run build",
+    "build:app": "npm --prefix app run build",
+    "install:all": "cd app && npm install && cd ../server && npm install"
   },
   "dependencies": {
     "cors": "^2.8.6",
