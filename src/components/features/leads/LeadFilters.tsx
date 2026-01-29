@@ -2,17 +2,17 @@
 
 import React from "react";
 import { Search, X, Filter, Upload } from "lucide-react";
-import { Select } from "@/components/ui/Select";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
-import { cn } from "@/lib/utils";
-import type { LeadFilters } from "@/types";
+import { Select } from "@/src/components/ui/Select";
+import { Input } from "@/src/components/ui/Input";
+import { Button } from "@/src/components/ui/Button";
+import { cn } from "@/src/lib/utils";
+import type { LeadFilters } from "@/src/types";
 import {
   RAPPORT_OPTIONS,
   SOURCE_OPTIONS,
   TYPE_INSTALLATION_OPTIONS,
   SMS_EMAIL_OPTIONS,
-} from "@/lib/constants";
+} from "@/src/lib/constants";
 
 interface LeadFiltersProps {
   filters: LeadFilters;

@@ -10,7 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import type { ActivityData } from "@/types";
+import type { ActivityData } from "@/src/types";
 
 interface ActivityChartProps {
   data: ActivityData[];

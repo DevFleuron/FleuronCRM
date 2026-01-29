@@ -31,7 +31,7 @@ const data = [
 ];
 
 const StatCard = ({ title, value, change, trend, icon: Icon, color }: any) => (
-  <div className="bg-[#111114] border border-slate-800 p-6 rounded-3xl hover:border-slate-700 transition-all group ">
+  <div className="bg-[#111114] border border-slate-800 p-6 rounded-2xl hover:border-slate-700 transition-all group">
     <div className="flex justify-between items-start mb-4">
       <div
         className={`p-3 rounded-xl bg-${color}-500/10 text-${color}-500 group-hover:scale-110 transition-transform`}
@@ -58,30 +58,28 @@ export default function DashboardPage() {
   const router = useRouter();
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-end">
+    <div className="space-y-6 md:space-y-8">
+      {/* Header - Stack vertical sur mobile */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-end">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Suivi Relances NRP</h1>
-          <p className="text-slate-400">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">
+            Suivi Relances NRP
+          </h1>
+          <p className="text-slate-400 text-sm md:text-base">
             Gestion des clients "Ne Répond Pas" et taux de récupération.
           </p>
         </div>
         <button
           onClick={() => router.push("/campaigns/new")}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+          className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg shadow-indigo-600/20 active:scale-95 w-full lg:w-auto"
         >
           <Plus className="w-5 h-5" />
-          Nouvelle Relance NRP
+          <span className="whitespace-nowrap">Nouvelle Relance NRP</span>
         </button>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: "1.5rem",
-        }}
-      >
+      {/* Stats Cards - Responsive grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard
           title="Total Leads NRP"
           value="4,820"
@@ -115,22 +113,27 @@ export default function DashboardPage() {
           color="emerald"
         />
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 ">
-        <div className="lg:col-span-2 bg-[#111114] border border-slate-800 p-8 rounded-2xl">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-xl font-bold">Activité des campagnes</h2>
+
+      {/* Charts & Recent - Stack vertical sur mobile/tablette */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Activity Chart */}
+        <div className="lg:col-span-2 bg-[#111114] border border-slate-800 p-6 md:p-8 rounded-2xl">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 md:mb-8">
+            <h2 className="text-lg md:text-xl font-bold">
+              Activité des campagnes
+            </h2>
             <div className="flex gap-4">
               <div className="flex items-center gap-2 text-sm text-slate-400">
                 <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
-                Email
+                <span>Email</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-slate-400">
                 <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-                SMS
+                <span>SMS</span>
               </div>
             </div>
           </div>
-          <div className="h-[300px] w-full">
+          <div className="h-[250px] md:h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data}>
                 <defs>
@@ -191,9 +194,12 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="bg-[#111114] border border-slate-800 p-8 rounded-2xl">
-          <h2 className="text-xl font-bold mb-6">Campagnes récentes</h2>
-          <div className="space-y-6">
+        {/* Recent Campaigns */}
+        <div className="bg-[#111114] border border-slate-800 p-6 md:p-8 rounded-2xl">
+          <h2 className="text-lg md:text-xl font-bold mb-6">
+            Campagnes récentes
+          </h2>
+          <div className="space-y-4 md:space-y-6">
             {[
               {
                 name: "Promo Été 2026",
@@ -224,21 +230,23 @@ export default function DashboardPage() {
                 key={i}
                 className="flex items-center justify-between group cursor-pointer"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-slate-800 text-slate-400 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors">
+                <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-slate-800 text-slate-400 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors flex-shrink-0">
                     {campaign.type === "Email" ? (
                       <Send className="w-5 h-5" />
                     ) : (
                       <MessageSquare className="w-5 h-5" />
                     )}
                   </div>
-                  <div>
-                    <p className="font-semibold text-sm">{campaign.name}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate">
+                      {campaign.name}
+                    </p>
                     <p className="text-xs text-slate-500">{campaign.date}</p>
                   </div>
                 </div>
                 <span
-                  className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase ${
+                  className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase whitespace-nowrap ml-2 ${
                     campaign.status === "Envoyé"
                       ? "bg-emerald-500/10 text-emerald-500"
                       : campaign.status === "En cours"
@@ -253,7 +261,7 @@ export default function DashboardPage() {
           </div>
           <button
             onClick={() => router.push("/campaigns/history")}
-            className="w-full mt-8 py-3 rounded-xl border border-slate-800 text-slate-400 font-medium hover:bg-white/5 transition-colors"
+            className="w-full mt-6 md:mt-8 py-3 rounded-xl border border-slate-800 text-slate-400 font-medium hover:bg-white/5 transition-colors text-sm md:text-base"
           >
             Voir tout l'historique
           </button>

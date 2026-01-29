@@ -2,9 +2,10 @@
 
 import React from "react";
 import { MessageSquare, Mail } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/src/components/ui/Button";
 import { LeadRow } from "./LeadRow";
-import type { Lead } from "@/types";
+import { LeadCard } from "./LeadCard";
+import type { Lead } from "@/src/types";
 
 interface LeadTableProps {
   leads: Lead[];
@@ -34,27 +35,63 @@ export function LeadTable({
 
   return (
     <div className="space-y-4">
+      {/* Bulk Actions Bar */}
       {selectedIds.length > 0 && (
-        <div className="card-base flex items-center justify-between">
-          <span className="font-semibold">
+        <div className="bg-surface-primary border border-border-primary rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <span className="font-semibold text-sm md:text-base">
             {selectedIds.length} lead{selectedIds.length > 1 ? "s" : ""}{" "}
-            sélectionné{selectedIds.length > 1 ? "s" : ""}
+            sélectionné
+            {selectedIds.length > 1 ? "s" : ""}
           </span>
-          <div className="flex gap-3">
-            <Button variant="primary" size="sm" onClick={onBulkSMS}>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={onBulkSMS}
+              className="flex-1 sm:flex-initial"
+            >
               <MessageSquare className="w-4 h-4" />
-              Envoyer SMS
+              <span className="hidden sm:inline">Envoyer SMS</span>
+              <span className="sm:hidden">SMS</span>
             </Button>
-            <Button variant="secondary" size="sm" onClick={onBulkEmail}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onBulkEmail}
+              className="flex-1 sm:flex-initial"
+            >
               <Mail className="w-4 h-4" />
-              Envoyer Email
+              <span className="hidden sm:inline">Envoyer Email</span>
+              <span className="sm:hidden">Email</span>
             </Button>
           </div>
         </div>
       )}
 
-      <div className="card-base overflow-hidden p-0">
-        <div className="overflow-x-auto custom-scrollbar">
+      {/* Mobile: Cards */}
+      <div className="block lg:hidden space-y-3">
+        {leads.length === 0 ? (
+          <div className="bg-surface-primary border border-border-primary rounded-xl p-12 text-center text-text-tertiary">
+            Aucun lead trouvé
+          </div>
+        ) : (
+          leads.map((lead) => (
+            <LeadCard
+              key={lead._id}
+              lead={lead}
+              isSelected={selectedIds.includes(lead._id!)}
+              onToggleSelect={onToggleSelect}
+              onSendSMS={onSendSMS}
+              onSendEmail={onSendEmail}
+              onViewDetails={onViewDetails}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Desktop: Table */}
+      <div className="hidden lg:block bg-surface-primary border border-border-primary rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-surface-secondary border-b border-border-primary">
               <tr>
