@@ -78,8 +78,8 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {/* Stats Cards - Responsive grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      {/* Stats Cards  */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
         <StatCard
           title="Total Leads NRP"
           value="4,820"
@@ -202,13 +202,13 @@ export default function DashboardPage() {
           <div className="space-y-4 md:space-y-6">
             {[
               {
-                name: "Promo Été 2026",
+                name: "SMS NRP",
                 type: "Email",
                 status: "Envoyé",
                 date: "Hier, 14:00",
               },
               {
-                name: "Rappel Panier",
+                name: "Rappel ITE",
                 type: "SMS",
                 status: "En cours",
                 date: "Aujourd'hui, 10:30",
