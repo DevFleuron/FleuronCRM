@@ -16,7 +16,7 @@ export interface ILead {
   source: string // Source du lead (site web, téléphone, etc.)
   telepro?: string // Nom du téléprospecteur
   equipe?: string // Équipe assignée
-  rapport: 'NRP' | 'CLIENT' | 'PERDU' | 'RDV PRIS' | 'A RAPPELER'
+  rapport: 'NOUVEAU PROSPECT' | 'NRP' | 'CLIENT' | 'PERDU' | 'RDV PRIS' | 'A RAPPELER'
   observation?: string // Notes et observations
   typeInstallation?: string // Type d'installation
 
@@ -108,7 +108,7 @@ const LeadSchema: Schema = new Schema<ILeadDocument>(
     },
     rapport: {
       type: String,
-      enum: ['NRP', 'CLIENT', 'PERDU', 'RDV PRIS', 'A RAPPELER'],
+      enum: ['NOUVEAU PROSPECT', 'NRP', 'CLIENT', 'PERDU', 'RDV PRIS', 'A RAPPELER'],
       required: true,
       default: 'NRP',
     },

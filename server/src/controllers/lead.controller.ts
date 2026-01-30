@@ -149,13 +149,19 @@ export const getLeadByRef = async (req: Request, res: Response): Promise<void> =
  */
 export const createLead = async (req: Request, res: Response): Promise<void> => {
   try {
+    console.log('🎯 createLead appelé !')
+    console.log('📥 Body reçu:', JSON.stringify(req.body, null, 2))
+    console.log('📋 Headers:', req.headers)
+
     const leadData = req.body
 
     // Vérifier si la référence existe déjà
     if (leadData.ref) {
+      console.log('🔍 Vérification de la référence:', leadData.ref)
       const existingLead = await Lead.findOne({ ref: leadData.ref })
 
       if (existingLead) {
+        console.log('⚠️ Lead existe déjà')
         res.status(400).json({
           success: false,
           message: 'Un lead avec cette référence existe déjà',
@@ -169,6 +175,7 @@ export const createLead = async (req: Request, res: Response): Promise<void> => 
       const timestamp = Date.now()
       const random = Math.floor(Math.random() * 10000)
       leadData.ref = `LEAD-${timestamp}-${random}`
+      console.log('✨ Référence générée:', leadData.ref)
     }
 
     // Valeurs par défaut
@@ -184,8 +191,10 @@ export const createLead = async (req: Request, res: Response): Promise<void> => 
       leadData.heure = new Date().toLocaleTimeString('fr-FR')
     }
 
+    console.log('💾 Création du lead dans MongoDB...')
     // Créer le lead
     const lead = await Lead.create(leadData)
+    console.log('✅ Lead créé avec succès:', lead._id)
 
     res.status(201).json({
       success: true,

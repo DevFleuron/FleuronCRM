@@ -4,7 +4,7 @@ import dotenv from 'dotenv'
 import { connectDB } from './config/database'
 
 // Import des routes
-import leadRoutes from './routes/history.routes'
+import leadRoutes from './routes/leads.route'
 import importRoutes from './routes/import.routes'
 import historyRoutes from './routes/history.routes'
 
