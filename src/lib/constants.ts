@@ -31,3 +31,13 @@ export const SMS_EMAIL_OPTIONS = [
   { value: "yes", label: "Envoyé" },
   { value: "no", label: "Non envoyé" },
 ];
+
+export const TEMPLATE_VARIABLES = [
+  { key: "nom", label: "Nom", example: "DUPONT" },
+  { key: "prenom", label: "Prénom", example: "Jean" },
+  { key: "ref", label: "Référence", example: "47750" },
+  { key: "mobile", label: "Mobile", example: "06 12 34 56 78" },
+  { key: "date", label: "Date", example: "26/01/2026" },
+  { key: "source", label: "Source", example: "LOGICALL" },
+  { key: "typeInstallation", label: "Type Installation", example: "ITE" },
+];

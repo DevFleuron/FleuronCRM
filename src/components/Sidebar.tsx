@@ -8,6 +8,7 @@ import {
   History,
   Users,
   Settings,
+  ChevronLeft,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/src/lib/utils";
@@ -45,6 +46,14 @@ export function Sidebar({ isMobileMenuOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
+  const handleToggle = (e: React.MouseEvent) => {
+    // Ne pas toggle si on clique sur un bouton de navigation
+    if ((e.target as HTMLElement).closest("button[data-nav-item]")) {
+      return;
+    }
+    setIsOpen(!isOpen);
+  };
+
   return (
     <>
       {/* Mobile Overlay */}
@@ -66,17 +75,39 @@ export function Sidebar({ isMobileMenuOpen, onClose }: SidebarProps) {
           isOpen ? "w-64" : "w-20",
         )}
       >
-        <div className="p-6 flex items-center gap-3">
+        {/* Header - Cliquable sur desktop */}
+        <div
+          className="p-6 flex items-center justify-between gap-3 cursor-pointer hover:bg-surface-hover transition-colors hidden lg:flex"
+          onClick={handleToggle}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center flex-shrink-0">
+              <Send className="w-5 h-5 text-white" />
+            </div>
+            {isOpen && (
+              <span className="font-bold text-xl bg-gradient-to-r from-white to-text-secondary bg-clip-text text-transparent uppercase tracking-tight">
+                Fleuron CRM
+              </span>
+            )}
+          </div>
+          {isOpen && (
+            <ChevronLeft className="w-5 h-5 text-text-secondary flex-shrink-0" />
+          )}
+        </div>
+
+        {/* Header - Non cliquable sur mobile */}
+        <div className="p-6 flex items-center gap-3 lg:hidden">
           <div className="w-8 h-8 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center">
             <Send className="w-5 h-5 text-white" />
           </div>
           {isOpen && (
             <span className="font-bold text-xl bg-gradient-to-r from-white to-text-secondary bg-clip-text text-transparent uppercase tracking-tight">
-              Fleuron Hub{" "}
+              FLeuron CRM
             </span>
           )}
         </div>
 
+        {/* Navigation */}
         <nav className="flex-1 px-3 space-y-2 mt-4">
           {navigation.map((item) => {
             const Icon = item.icon;
@@ -86,9 +117,10 @@ export function Sidebar({ isMobileMenuOpen, onClose }: SidebarProps) {
             return (
               <button
                 key={item.id}
+                data-nav-item
                 onClick={() => {
                   router.push(item.href);
-                  onClose(); // Ferme le menu sur mobile après navigation
+                  onClose();
                 }}
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200",
@@ -97,45 +129,27 @@ export function Sidebar({ isMobileMenuOpen, onClose }: SidebarProps) {
                     : "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
                 )}
               >
-                <Icon className="w-5 h-5" />
-                {isOpen && <span className="font-medium">{item.name}</span>}
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                {isOpen && (
+                  <span className="font-medium truncate">{item.name}</span>
+                )}
               </button>
             );
           })}
         </nav>
 
+        {/* Settings */}
         <div className="px-3 pb-6">
           <button
+            data-nav-item
             className={cn(
               "w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 text-text-secondary hover:bg-surface-hover hover:text-text-primary",
             )}
           >
-            <Settings className="w-5 h-5" />
+            <Settings className="w-5 h-5 flex-shrink-0" />
             {isOpen && <span className="font-medium">Paramètres</span>}
           </button>
         </div>
-
-        {/* Collapse button - Hidden on mobile */}
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="hidden lg:flex absolute bottom-24 left-1/2 -translate-x-1/2 w-10 h-10 bg-surface-secondary hover:bg-border-primary rounded-lg items-center justify-center transition-colors"
-        >
-          <div className={cn("transition-transform", !isOpen && "rotate-180")}>
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </div>
-        </button>
       </aside>
     </>
   );

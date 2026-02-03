@@ -72,3 +72,22 @@ export interface RecentCampaign {
   recipientsCount: number;
   sentAt: Date;
 }
+
+export interface Template {
+  _id?: string;
+  name: string;
+  type: "sms" | "email";
+  subject?: string; // Pour email uniquement
+  content: string;
+  variables: string[]; // ['nom', 'prenom', 'ref']
+  createdAt?: Date;
+  updatedAt?: Date;
+  usageCount?: number; // Nombre de fois utilisé
+}
+
+export interface TemplateFormData {
+  name: string;
+  type: "sms" | "email";
+  subject?: string;
+  content: string;
+}
