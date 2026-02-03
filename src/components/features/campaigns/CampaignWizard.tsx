@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { ArrowLeft, ArrowRight, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/src/components/ui/Button";
+import { ConfirmModal } from "@/src/components/ui/ConfirmModal";
+import { useToast } from "@/src/components/contexts/ToastContext";
 import { WizardProgress } from "./WizardProgress";
 import { WizardStep1 } from "./WizardStep1";
 import { WizardStep2 } from "./WizardStep2";
@@ -17,6 +19,8 @@ interface CampaignWizardProps {
 
 export function CampaignWizard({ leads, templates }: CampaignWizardProps) {
   const router = useRouter();
+  const { showToast } = useToast();
+
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
@@ -26,6 +30,9 @@ export function CampaignWizard({ leads, templates }: CampaignWizardProps) {
   const [campaignName, setCampaignName] = useState("");
   const [scheduledAt, setScheduledAt] = useState<Date | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Modal de confirmation
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const steps: WizardStep[] = [
     {
@@ -62,7 +69,41 @@ export function CampaignWizard({ leads, templates }: CampaignWizardProps) {
   };
 
   const handleNext = () => {
-    if (canGoNext() && currentStep < 3) {
+    if (currentStep === 1) {
+      if (selectedLeadIds.length === 0) {
+        showToast(
+          "warning",
+          "Aucun lead sélectionné",
+          "Veuillez sélectionner au moins un destinataire pour continuer",
+        );
+        return;
+      }
+    }
+
+    if (currentStep === 2) {
+      if (!selectedTemplateId) {
+        showToast(
+          "warning",
+          "Aucun template sélectionné",
+          "Veuillez choisir un template SMS ou Email pour continuer",
+        );
+        return;
+      }
+    }
+
+    if (currentStep === 3) {
+      if (!campaignName) {
+        showToast(
+          "warning",
+          "Nom de campagne manquant",
+          "Veuillez donner un nom à votre campagne",
+        );
+        return;
+      }
+    }
+
+    // Si tout est ok, passer à l'étape suivante
+    if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -79,7 +120,6 @@ export function CampaignWizard({ leads, templates }: CampaignWizardProps) {
     setSelectedTemplateId(id);
     setCampaignType(type);
 
-    // Auto-générer un nom de campagne
     if (!campaignName && id) {
       const template = templates.find((t) => t._id === id);
       const date = new Date().toLocaleDateString("fr-FR");
@@ -87,16 +127,24 @@ export function CampaignWizard({ leads, templates }: CampaignWizardProps) {
     }
   };
 
-  const handleSubmit = async () => {
+  // Ouvrir la confirmation
+  const handleSendClick = () => {
     if (!campaignName || !selectedTemplateId || selectedLeadIds.length === 0) {
-      alert("Veuillez remplir tous les champs obligatoires");
+      showToast(
+        "error",
+        "Champs manquants",
+        "Veuillez remplir tous les champs obligatoires",
+      );
       return;
     }
+    setIsConfirmOpen(true);
+  };
 
+  // Envoi après confirmation
+  const handleConfirmSend = async () => {
     setIsSubmitting(true);
 
     try {
-      // TODO: Appeler l'API pour créer la campagne
       const campaignData = {
         name: campaignName,
         type: campaignType,
@@ -107,18 +155,26 @@ export function CampaignWizard({ leads, templates }: CampaignWizardProps) {
 
       console.log("Creating campaign:", campaignData);
 
-      // Simuler un délai
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Simuler l'appel API
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      alert(
-        `Campagne "${campaignName}" créée avec succès ! ${scheduledAt ? "Elle sera envoyée à la date prévue." : "Envoi en cours..."}`,
+      // Afficher le toast de succès
+      showToast(
+        "success",
+        "Campagne créée !",
+        scheduledAt
+          ? `"${campaignName}" sera envoyée le ${scheduledAt.toLocaleDateString("fr-FR")}`
+          : `"${campaignName}" est en cours d'envoi`,
       );
 
-      router.push("/campaigns/history");
+      router.push("/campaign/history");
     } catch (error) {
       console.error("Error creating campaign:", error);
-      alert("Erreur lors de la création de la campagne");
-    } finally {
+      showToast(
+        "error",
+        "Erreur",
+        "Une erreur est survenue lors de la création de la campagne",
+      );
       setIsSubmitting(false);
     }
   };
@@ -187,9 +243,9 @@ export function CampaignWizard({ leads, templates }: CampaignWizardProps) {
               variant="secondary"
               size="lg"
               onClick={handleBack}
-              className="flex-1 sm:flex-initial"
+              disabled={isSubmitting}
+              className="flex-1 sm:flex-initial rounded-xl"
             >
-              <ArrowLeft className="w-5 h-5" />
               Retour
             </Button>
           )}
@@ -199,35 +255,40 @@ export function CampaignWizard({ leads, templates }: CampaignWizardProps) {
               variant="primary"
               size="lg"
               onClick={handleNext}
-              disabled={!canGoNext()}
-              className="flex-1 sm:flex-initial"
+              className="flex-1 sm:flex-initial rounded-xl"
             >
               Suivant
-              <ArrowRight className="w-5 h-5" />
             </Button>
           ) : (
             <Button
               variant="primary"
               size="lg"
-              onClick={handleSubmit}
-              disabled={!canGoNext() || isSubmitting}
+              onClick={handleSendClick}
               className="flex-1 sm:flex-initial"
             >
-              {isSubmitting ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Envoi en cours...
-                </>
-              ) : (
-                <>
-                  <Send className="w-5 h-5" />
-                  {scheduledAt ? "Planifier l'envoi" : "Envoyer maintenant"}
-                </>
-              )}
+              <Send className="w-5 h-5" />
+              {scheduledAt ? "Planifier l'envoi" : "Envoyer maintenant"}
             </Button>
           )}
         </div>
       </div>
+
+      {/* Modal de Confirmation */}
+      <ConfirmModal
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={handleConfirmSend}
+        title="Confirmer l'envoi de la campagne"
+        message={
+          scheduledAt
+            ? `Êtes-vous sûr de vouloir planifier la campagne "${campaignName}" pour ${selectedLeadIds.length} destinataire${selectedLeadIds.length > 1 ? "s" : ""} le ${scheduledAt.toLocaleDateString("fr-FR")} ?`
+            : `Êtes-vous sûr de vouloir envoyer la campagne "${campaignName}" à ${selectedLeadIds.length} destinataire${selectedLeadIds.length > 1 ? "s" : ""} maintenant ?`
+        }
+        type="warning"
+        confirmText={scheduledAt ? "Planifier" : "Envoyer"}
+        cancelText="Annuler"
+        isLoading={isSubmitting}
+      />
     </div>
   );
 }

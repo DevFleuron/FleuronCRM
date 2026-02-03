@@ -5,6 +5,7 @@ import { X, Plus, Eye } from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
 import { Input } from "@/src/components/ui/Input";
 import { Select } from "@/src/components/ui/Select";
+import { useToast } from "@/src/components/contexts/ToastContext";
 import type { Template, TemplateFormData } from "@/src/types";
 import { TEMPLATE_VARIABLES } from "@/src/lib/constants";
 
@@ -12,7 +13,7 @@ interface TemplateModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: TemplateFormData) => void;
-  template?: Template; // Pour édition
+  template?: Template;
 }
 
 export function TemplateModal({
@@ -21,6 +22,7 @@ export function TemplateModal({
   onSave,
   template,
 }: TemplateModalProps) {
+  const { showToast } = useToast();
   const [formData, setFormData] = useState<TemplateFormData>({
     name: "",
     type: "sms",
@@ -52,12 +54,20 @@ export function TemplateModal({
 
   const handleSave = () => {
     if (!formData.name || !formData.content) {
-      alert("Veuillez remplir tous les champs obligatoires");
+      showToast(
+        "error",
+        "Champs manquants",
+        "Veuillez remplir tous les champs obligatoires",
+      );
       return;
     }
 
     if (formData.type === "email" && !formData.subject) {
-      alert("L'objet est obligatoire pour les emails");
+      showToast(
+        "error",
+        "Objet manquant",
+        "L'objet est obligatoire pour les emails",
+      );
       return;
     }
 
@@ -176,7 +186,6 @@ export function TemplateModal({
                   onClick={() => insertVariable(variable.key)}
                   className="px-3 py-1.5 bg-slate-800 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-400 rounded-lg text-sm font-medium transition-colors border border-slate-700 hover:border-indigo-500/50"
                 >
-                  <Plus className="w-3 h-3 inline mr-1" />
                   {variable.label}
                 </button>
               ))}

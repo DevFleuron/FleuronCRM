@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, Search, Filter } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
+import { ConfirmModal } from "@/src/components/ui/ConfirmModal";
 import { TemplateCard } from "@/src/components/features/templates/TemplateCard";
 import { TemplateModal } from "@/src/components/features/templates/TemplateModal";
+import { useToast } from "@/src/components/contexts/ToastContext";
 import type { Template, TemplateFormData } from "@/src/types";
 
-// Données mockées
 const MOCK_TEMPLATES: Template[] = [
   {
     _id: "1",
@@ -43,6 +44,7 @@ const MOCK_TEMPLATES: Template[] = [
 ];
 
 export default function TemplatesPage() {
+  const { showToast } = useToast();
   const [templates, setTemplates] = useState<Template[]>(MOCK_TEMPLATES);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<
@@ -50,6 +52,10 @@ export default function TemplatesPage() {
   >();
   const [typeFilter, setTypeFilter] = useState<"all" | "sms" | "email">("all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Confirmation modal
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const filteredTemplates = templates.filter((template) => {
     const matchesType = typeFilter === "all" || template.type === typeFilter;
@@ -74,6 +80,11 @@ export default function TemplatesPage() {
             : t,
         ),
       );
+      showToast(
+        "success",
+        "Template modifié",
+        "Le template a été modifié avec succès",
+      );
     } else {
       // Create
       const newTemplate: Template = {
@@ -84,6 +95,11 @@ export default function TemplatesPage() {
         usageCount: 0,
       };
       setTemplates([newTemplate, ...templates]);
+      showToast(
+        "success",
+        "Template créé",
+        "Le template a été créé avec succès",
+      );
     }
     setEditingTemplate(undefined);
   };
@@ -94,9 +110,20 @@ export default function TemplatesPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer ce template ?")) {
-      setTemplates(templates.filter((t) => t._id !== id));
+    setDeleteId(id);
+    setIsConfirmOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (deleteId) {
+      setTemplates(templates.filter((t) => t._id !== deleteId));
+      showToast(
+        "success",
+        "Template supprimé",
+        "Le template a été supprimé avec succès",
+      );
     }
+    setDeleteId(null);
   };
 
   const extractVariables = (content: string): string[] => {
@@ -199,7 +226,7 @@ export default function TemplatesPage() {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modal Template */}
       <TemplateModal
         isOpen={isModalOpen}
         onClose={() => {
@@ -208,6 +235,21 @@ export default function TemplatesPage() {
         }}
         onSave={handleSave}
         template={editingTemplate}
+      />
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={isConfirmOpen}
+        onClose={() => {
+          setIsConfirmOpen(false);
+          setDeleteId(null);
+        }}
+        onConfirm={confirmDelete}
+        title="Supprimer le template"
+        message="Êtes-vous sûr de vouloir supprimer ce template ? Cette action est irréversible."
+        type="danger"
+        confirmText="Supprimer"
+        cancelText="Annuler"
       />
     </div>
   );

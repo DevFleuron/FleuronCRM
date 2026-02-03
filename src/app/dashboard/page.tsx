@@ -70,7 +70,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <button
-          onClick={() => router.push("/campaigns/new")}
+          onClick={() => router.push("/campaign/new")}
           className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg shadow-indigo-600/20 active:scale-95 w-full lg:w-auto"
         >
           <Plus className="w-5 h-5" />

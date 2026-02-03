@@ -31,7 +31,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             "text-text-secondary",
             "hover:bg-surface-hover hover:text-text-primary",
           ],
-          variant === "danger" && ["bg-error text-white", "hover:bg-error/90"],
+          variant === "danger" &&
+            "bg-error hover:bg-error/90 text-white shadow-lg shadow-error/20",
 
           size === "sm" && "px-3 py-1.5 text-sm gap-1.5",
           size === "md" && "px-4 py-2.5 text-sm gap-2",

@@ -144,7 +144,7 @@ export default function CampaignHistoryPage() {
         <Button
           variant="primary"
           size="lg"
-          onClick={() => router.push("/campaigns/new")}
+          onClick={() => router.push("/campaign/new")}
           className="w-full lg:w-auto rounded-xl"
         >
           Nouvelle Relance

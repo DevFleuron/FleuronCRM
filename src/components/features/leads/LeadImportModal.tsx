@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { X, Upload, AlertCircle, CheckCircle2, FileText } from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
 import { cn } from "@/src/lib/utils";
+import { useToast } from "@/src/components/contexts/ToastContext";
 
 interface LeadImportModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export function LeadImportModal({
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const { showToast } = useToast();
 
   if (!isOpen) return null;
 
@@ -67,13 +69,21 @@ export function LeadImportModal({
     try {
       await onImport(file);
       setSuccess(true);
+      showToast(
+        "success",
+        "Import réussi",
+        "Les leads ont été importés avec succès",
+      );
       setTimeout(() => {
         onClose();
         setFile(null);
         setSuccess(false);
       }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur lors de l'import");
+      const errorMessage =
+        err instanceof Error ? err.message : "Erreur lors de l'import";
+      setError(errorMessage);
+      showToast("error", "Erreur d'import", errorMessage);
     } finally {
       setIsUploading(false);
     }
