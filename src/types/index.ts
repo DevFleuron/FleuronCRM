@@ -91,3 +91,35 @@ export interface TemplateFormData {
   subject?: string;
   content: string;
 }
+
+export interface Campaign {
+  _id?: string;
+  name: string;
+  type: "sms" | "email";
+  templateId: string;
+  recipients: string[]; // IDs des leads
+  recipientsCount: number;
+  sentCount: number;
+  failedCount: number;
+  status: "draft" | "sending" | "sent" | "failed";
+  scheduledAt?: Date;
+  sentAt?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface CampaignFormData {
+  name: string;
+  type: "sms" | "email";
+  templateId: string;
+  recipients: string[];
+  filters?: LeadFilters;
+  scheduledAt?: Date;
+}
+
+export interface WizardStep {
+  number: number;
+  title: string;
+  description: string;
+  isComplete: boolean;
+}

@@ -24,16 +24,16 @@ const navigation = [
     id: "campaign",
     name: "Nouvelle Relance",
     icon: Send,
-    href: "/campaigns/new",
+    href: "/campaign/new",
   },
   { id: "templates", name: "Modèles NRP", icon: FileText, href: "/templates" },
   {
     id: "history",
     name: "Historique Relances",
     icon: History,
-    href: "/campaigns/history",
+    href: "/campaign/history",
   },
-  { id: "leads", name: "Fichier NRP", icon: Users, href: "/leads" },
+  { id: "leads", name: "Leads NRP", icon: Users, href: "/leads" },
 ];
 
 interface SidebarProps {
