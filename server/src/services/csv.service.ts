@@ -93,7 +93,11 @@ export class CSVService {
       // Lire le fichier CSV
       await new Promise<void>((resolve, reject) => {
         fs.createReadStream(filePath)
-          .pipe(csvParser())
+          .pipe(
+            csvParser({
+              mapHeaders: ({ header }) => header.trim().toLowerCase(),
+            })
+          )
           .on('data', (row: CSVRow) => {
             rows.push(row)
             stats.total++
@@ -107,21 +111,26 @@ export class CSVService {
       // Traiter chaque ligne
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i]
-        const lineNumber = i + 2 // +2 car ligne 1 = header et index commence à 0
+        const lineNumber = i + 2
 
         try {
+          console.log(`🔍 Ligne ${lineNumber}:`, row)
+
+          // Détecter quelle clé est utilisée pour codePostal
+          const codePostal = row.codepostal || row.code_postal || row.cp || ''
+          const typeInstallation = row.typeinstallation || row.type_installation || ''
+
           // Valider les champs obligatoires
-          if (
-            !row.nom ||
-            !row.prenom ||
-            !row.email ||
-            !row.mobile ||
-            !row.codePostal ||
-            !row.source
-          ) {
-            throw new Error(
-              'Champs obligatoires manquants (nom, prenom, email, mobile, codePostal, source)'
-            )
+          if (!row.nom || !row.prenom || !row.email || !row.mobile || !codePostal || !row.source) {
+            const missingFields = []
+            if (!row.nom) missingFields.push('nom')
+            if (!row.prenom) missingFields.push('prenom')
+            if (!row.email) missingFields.push('email')
+            if (!row.mobile) missingFields.push('mobile')
+            if (!codePostal) missingFields.push('codePostal')
+            if (!row.source) missingFields.push('source')
+
+            throw new Error(`Champs obligatoires manquants: ${missingFields.join(', ')}`)
           }
 
           // Générer une ref si non fournie
@@ -132,7 +141,7 @@ export class CSVService {
 
           // Créer ou mettre à jour le lead
           await Lead.findOneAndUpdate(
-            { ref: ref }, // Recherche par référence unique
+            { ref: ref },
             {
               ref: ref,
               date: date,
@@ -142,19 +151,19 @@ export class CSVService {
               mobile: row.mobile.trim(),
               email: row.email.toLowerCase().trim(),
               adresse: row.adresse?.trim() || '',
-              codePostal: row.codePostal.trim(),
+              codePostal: codePostal.trim(), // ← Utilise la variable détectée
               source: row.source.trim(),
               telepro: row.telepro?.trim() || '',
               equipe: row.equipe?.trim() || '',
               rapport: row.rapport?.trim() || 'NOUVEAU PROSPECT',
               observation: row.observation?.trim() || '',
-              typeInstallation: row.typeInstallation?.trim() || '',
+              typeInstallation: typeInstallation.trim(), // ← Utilise la variable détectée
               importedAt: new Date(),
             },
             {
-              upsert: true, // Crée si n'existe pas
-              new: true, // Retourne le document mis à jour
-              runValidators: true, // Exécute les validations du schéma
+              upsert: true,
+              new: true,
+              runValidators: true,
             }
           )
 
@@ -199,15 +208,20 @@ export class CSVService {
    * Valider le format du CSV
    */
   static async validateCSV(filePath: string): Promise<{ valid: boolean; message: string }> {
-    const requiredHeaders = ['nom', 'prenom', 'email', 'mobile', 'codePostal', 'source']
+    const requiredHeaders = ['nom', 'prenom', 'email', 'mobile', 'codepostal', 'source'] // ← codepostal en minuscule
 
     return new Promise((resolve, reject) => {
       let headers: string[] = []
 
       fs.createReadStream(filePath)
-        .pipe(csvParser())
+        .pipe(
+          csvParser({
+            mapHeaders: ({ header }) => header.trim().toLowerCase(), // ← Normalise tout en minuscule
+          })
+        )
         .on('headers', (headerList: string[]) => {
-          headers = headerList.map((h) => h.toLowerCase().trim())
+          headers = headerList
+          console.log('📋 Headers CSV détectés:', headers)
         })
         .on('data', () => {
           // On lit juste pour déclencher 'headers'
@@ -216,11 +230,13 @@ export class CSVService {
           const missingHeaders = requiredHeaders.filter((h) => !headers.includes(h))
 
           if (missingHeaders.length > 0) {
+            console.log('❌ Headers manquants:', missingHeaders)
             resolve({
               valid: false,
               message: `Colonnes manquantes: ${missingHeaders.join(', ')}`,
             })
           } else {
+            console.log('✅ Tous les headers requis sont présents')
             resolve({
               valid: true,
               message: 'Format CSV valide',

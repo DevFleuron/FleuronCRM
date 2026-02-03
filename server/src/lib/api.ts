@@ -22,7 +22,7 @@ export interface Lead {
   source: string
   telepro?: string
   equipe?: string
-  rapport: 'NRP' | 'CLIENT' | 'PERDU' | 'RDV PRIS' | 'A RAPPELER'
+  rapport: 'NOUVEAU PROSPECT' | 'NRP' | 'CLIENT' | 'PERDU' | 'RDV PRIS' | 'A RAPPELER'
   observation?: string
   typeInstallation?: string
   smsEnvoye: boolean
