@@ -1,90 +1,47 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { LeadFiltersBar } from "@/src/components/features/leads/LeadFilters";
 import { LeadTable } from "@/src/components/features/leads/LeadTable";
 import { LeadImportModal } from "@/src/components/features/leads/LeadImportModal";
+import { useToast } from "@/src/components/contexts/ToastContext";
 import type { Lead, LeadFilters } from "@/src/types";
-
-// Données mockées (gardées telles quelles)
-const MOCK_LEADS: Lead[] = [
-  {
-    _id: "1",
-    ref: "47750",
-    date: new Date("2026-01-26"),
-    heure: "11:49",
-    nom: "VICHERAT",
-    prenom: "ANTHONY",
-    mobile: "06 23 17 56 85",
-    email: "anthony.vicherat@laposte.net",
-    adresse: "",
-    codePostal: "55300",
-    source: "LOGICALL",
-    telepro: "JANIN JESSICA",
-    equipe: "Fleuron Industries",
-    rapport: "NRP",
-    observation: "par JESSICA JANIN 26/01/2026 16:53 : NRP/ msg laisser",
-    typeInstallation: "ITE",
-    smsEnvoye: false,
-    smsCount: 0,
-    emailEnvoye: false,
-    emailCount: 0,
-    importedAt: new Date(),
-  },
-  {
-    _id: "2",
-    ref: "47770",
-    date: new Date("2026-01-26"),
-    heure: "11:49",
-    nom: "IMNO",
-    prenom: "ANNE",
-    mobile: "06 61 78 78 07",
-    email: "christyann@laposte.net",
-    adresse: "",
-    codePostal: "15140",
-    source: "LOGICALL",
-    telepro: "RIBERTE MICKAEL",
-    equipe: "",
-    rapport: "NRP",
-    observation: "par POMELO 27/01/2026 19:24 : NOUVEAU PROSPECT => NRP",
-    typeInstallation: "ITE",
-    smsEnvoye: true,
-    smsCount: 2,
-    emailEnvoye: false,
-    emailCount: 0,
-    importedAt: new Date(),
-  },
-  {
-    _id: "3",
-    ref: "47771",
-    date: new Date("2026-01-26"),
-    heure: "11:49",
-    nom: "FATA",
-    prenom: "SAID",
-    mobile: "06 76 58 23 13",
-    email: "hadjimoussa254@gmail.com",
-    adresse: "",
-    codePostal: "13003",
-    source: "LOGICALL",
-    telepro: "BELLON ERIC",
-    equipe: "",
-    rapport: "NRP",
-    observation: "par ERIC BELLON 26/01/2026 17:54 : msg laissé",
-    typeInstallation: "ITE",
-    smsEnvoye: false,
-    smsCount: 0,
-    emailEnvoye: true,
-    emailCount: 1,
-    importedAt: new Date(),
-  },
-];
+import { ApiService } from "@/src/lib/api";
 
 export default function LeadsPage() {
-  const [leads] = useState<Lead[]>(MOCK_LEADS);
+  const { showToast } = useToast();
   const [filters, setFilters] = useState<LeadFilters>({});
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
+  //  Charger les leads au montage
+  useEffect(() => {
+    loadLeads();
+  }, []);
+
+  //  Fonction pour charger les leads depuis l'API
+  const loadLeads = async () => {
+    try {
+      setLoading(true);
+      const response = await ApiService.getLeads();
+
+      if (response.success) {
+        setLeads(response.data);
+        console.log(` ${response.data.length} leads chargés`);
+      } else {
+        showToast("error", "Erreur", "Impossible de charger les leads");
+      }
+    } catch (error) {
+      console.error("❌ Erreur loadLeads:", error);
+      showToast("error", "Erreur", "Erreur lors du chargement des leads");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Filtrage côté client
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
       if (filters.rapport && lead.rapport !== filters.rapport) return false;
@@ -109,11 +66,11 @@ export default function LeadsPage() {
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
         return (
-          lead.nom.toLowerCase().includes(searchLower) ||
-          lead.prenom.toLowerCase().includes(searchLower) ||
-          lead.email.toLowerCase().includes(searchLower) ||
-          lead.mobile.includes(searchLower) ||
-          lead.ref.includes(searchLower)
+          lead.nom?.toLowerCase().includes(searchLower) ||
+          lead.prenom?.toLowerCase().includes(searchLower) ||
+          lead.email?.toLowerCase().includes(searchLower) ||
+          lead.mobile?.includes(searchLower) ||
+          lead.ref?.includes(searchLower)
         );
       }
       return true;
@@ -138,33 +95,84 @@ export default function LeadsPage() {
     setFilters({});
   };
 
+  //  Import CSV connecté à l'API
   const handleImport = async (file: File) => {
-    console.log("Importing file:", file.name);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    alert("Import simulé ! Ton collègue backend implémentera le vrai parsing.");
+    try {
+      console.log("📤 Import en cours:", file.name);
+      const response = await ApiService.importCSV(file);
+
+      console.log("📦 Réponse complète:", JSON.stringify(response, null, 2));
+
+      if (response.success) {
+        //  Utiliser directement le message du backend
+        showToast(
+          "success",
+          "Import réussi !",
+          response.message, // "Import terminé: 0 nouveaux, 0 mis à jour, 0 erreurs"
+        );
+
+        //  Recharger les leads
+        console.log("🔄 Rechargement des leads...");
+        await loadLeads();
+      } else {
+        showToast("error", "Erreur d'import", response.message);
+      }
+    } catch (error: any) {
+      console.error("❌ Erreur import:", error);
+      showToast("error", "Erreur", error.message || "Erreur lors de l'import");
+    }
   };
 
   const handleSendSMS = (lead: Lead) => {
-    console.log("Send SMS to:", lead);
+    console.log(" Send SMS to:", lead);
+    showToast("info", "SMS", `SMS sera envoyé à ${lead.prenom} ${lead.nom}`);
+    // TODO: Implémenter l'envoi SMS avec Brevo
   };
 
   const handleSendEmail = (lead: Lead) => {
-    console.log("Send Email to:", lead);
+    console.log(" Send Email to:", lead);
+    showToast(
+      "info",
+      "Email",
+      `Email sera envoyé à ${lead.prenom} ${lead.nom}`,
+    );
+    // TODO: Implémenter l'envoi Email avec Brevo
   };
 
   const handleViewDetails = (lead: Lead) => {
-    console.log("View details:", lead);
+    console.log("👁️ View details:", lead);
+    // TODO: Ouvrir une modal avec les détails du lead
   };
 
   const handleBulkSMS = () => {
     const selected = leads.filter((lead) => selectedIds.includes(lead._id!));
-    console.log("Send SMS to selected:", selected);
+    console.log("📱 Send SMS to selected:", selected);
+    showToast("info", "SMS groupé", `${selected.length} SMS seront envoyés`);
+    // TODO: Implémenter l'envoi groupé
   };
 
   const handleBulkEmail = () => {
     const selected = leads.filter((lead) => selectedIds.includes(lead._id!));
-    console.log("Send Email to selected:", selected);
+    console.log("📧 Send Email to selected:", selected);
+    showToast(
+      "info",
+      "Email groupé",
+      `${selected.length} emails seront envoyés`,
+    );
+    // TODO: Implémenter l'envoi groupé
   };
+
+  //  Afficher un loader pendant le chargement
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-400">Chargement des leads...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -172,7 +180,7 @@ export default function LeadsPage() {
       <div>
         <h1 className="text-2xl md:text-3xl font-bold mb-2">Leads NRP</h1>
         <p className="text-text-secondary text-sm md:text-base">
-          Gestion et relance des clients Ne Répond Pas
+          Gestion et relance des clients ({leads.length} leads)
         </p>
       </div>
 

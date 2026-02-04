@@ -260,7 +260,7 @@ export default function DashboardPage() {
             ))}
           </div>
           <button
-            onClick={() => router.push("/campaigns/history")}
+            onClick={() => router.push("/campaign/history")}
             className="w-full mt-6 md:mt-8 py-3 rounded-xl border border-slate-800 text-slate-400 font-medium hover:bg-white/5 transition-colors text-sm md:text-base"
           >
             Voir tout l'historique

@@ -1,249 +1,446 @@
-import fs from 'fs'
-import csvParser from 'csv-parser'
-import Lead from '../models/Lead.model'
-import ImportHistory from '../models/ImportHistory.model'
+import fs from "fs";
+import csv from "csv-parser";
+import Lead from "../models/Lead.model";
+import ImportHistory from "../models/ImportHistory.model";
+import Campaign from "../models/Campaign.model";
+import mongoose from "mongoose";
 
-/**
- * INTERFACE pour les lignes du CSV
- */
-interface CSVRow {
-  ref?: string
-  date?: string
-  heure?: string
-  nom?: string
-  prenom?: string
-  mobile?: string
-  email?: string
-  adresse?: string
-  codePostal?: string
-  source?: string
-  telepro?: string
-  equipe?: string
-  rapport?: string
-  observation?: string
-  typeInstallation?: string
-  [key: string]: any
-}
-
-/**
- * RÉSULTAT de l'import
- */
-interface ImportResult {
-  success: boolean
-  message: string
-  importHistoryId?: string
-  stats: {
-    total: number
-    success: number
-    errors: number
-  }
-  errors?: string[]
-}
-
-/**
- * SERVICE D'IMPORT CSV
- */
 export class CSVService {
   /**
-   * Générer une référence unique si non fournie
+   * Normaliser les headers (insensible à la casse, enlever espaces)
    */
-  private static generateRef(): string {
-    const timestamp = Date.now()
-    const random = Math.floor(Math.random() * 10000)
-    return `LEAD-${timestamp}-${random}`
+  private static normalizeHeader(header: string): string {
+    return header.toLowerCase().trim().replace(/\s+/g, "");
   }
 
   /**
-   * Parser une date depuis le CSV
+   * Mapper les headers du CSV vers les champs attendus
    */
-  private static parseDate(dateString: string): Date {
-    // Adapter selon votre format de date dans le CSV
-    // Exemple: "29/01/2025" ou "2025-01-29"
-    const parts = dateString.split('/')
-    if (parts.length === 3) {
-      // Format: DD/MM/YYYY
-      return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`)
+  private static mapHeaders(headers: string[]): Map<string, string> {
+    const mapping = new Map<string, string>();
+
+    // Mapping des colonnes
+    const columnMap: Record<string, string[]> = {
+      ref: ["ref", "reference"],
+      date: ["date", "datecontact"],
+      heure: ["heure", "time"],
+      nom: ["nom", "lastname", "name"],
+      prenom: ["prenom", "firstname"],
+      telephone: ["telephone", "tel", "fixe"],
+      mobile: ["mobile", "phone", "tel"],
+      email: ["email", "mail", "courriel"],
+      adresse: ["adresse", "address", "rue"],
+      codePostal: ["codepostal", "cp", "postalcode", "zipcode"],
+      source: ["source", "origine"],
+      telepro: ["telepro", "commercial", "teleprospecteur"],
+      equipe: ["equipe", "team", "groupe"],
+      rapport: ["rapport", "statut", "status", "etat"],
+      observation: ["observation", "commentaire", "note", "comment"],
+      typeInstallation: ["typeinstallation", "installation", "type"],
+    };
+
+    // Pour chaque header du CSV
+    headers.forEach((header) => {
+      const normalized = this.normalizeHeader(header);
+
+      // Trouver la correspondance
+      for (const [targetField, aliases] of Object.entries(columnMap)) {
+        if (aliases.includes(normalized)) {
+          mapping.set(header, targetField);
+          break;
+        }
+      }
+    });
+
+    return mapping;
+  }
+
+  /**
+   * Extraire les données d'une ligne CSV
+   */
+  private static extractRowData(
+    row: any,
+    headerMapping: Map<string, string>,
+  ): any {
+    const data: any = {};
+
+    for (const [csvHeader, targetField] of headerMapping.entries()) {
+      data[targetField] = row[csvHeader];
     }
-    return new Date(dateString)
+
+    return data;
   }
 
   /**
-   * Méthode principale pour importer un fichier CSV
+   * Valider la structure du CSV
    */
-  static async importCSV(filePath: string, fileName: string): Promise<ImportResult> {
-    // Créer un enregistrement dans l'historique
+  static async validateCSV(
+    filePath: string,
+  ): Promise<{ valid: boolean; message: string }> {
+    return new Promise((resolve) => {
+      const requiredFields = [
+        "ref",
+        "nom",
+        "prenom",
+        "mobile",
+        "codePostal",
+        "source",
+        "rapport",
+      ];
+      let headers: string[] = [];
+      let firstRow = true;
+
+      fs.createReadStream(filePath)
+        .pipe(csv({ separator: ";" }))
+        .on("headers", (headerList) => {
+          headers = headerList;
+        })
+        .on("data", () => {
+          if (firstRow) {
+            firstRow = false;
+
+            // Créer le mapping
+            const headerMapping = this.mapHeaders(headers);
+            const mappedFields = Array.from(headerMapping.values());
+
+            // Vérifier les champs obligatoires
+            const missingFields = requiredFields.filter(
+              (field) => !mappedFields.includes(field),
+            );
+
+            if (missingFields.length > 0) {
+              resolve({
+                valid: false,
+                message: `Colonnes manquantes: ${missingFields.join(", ")}`,
+              });
+            } else {
+              resolve({
+                valid: true,
+                message: "CSV valide",
+              });
+            }
+          }
+        })
+        .on("error", (error) => {
+          resolve({
+            valid: false,
+            message: `Erreur de lecture: ${error.message}`,
+          });
+        });
+    });
+  }
+
+  /**
+   * Importer le CSV avec UPSERT
+   */
+  static async importCSV(filePath: string, nomFichier: string) {
+    const startTime = Date.now();
+
+    // Créer l'historique d'import
     const importHistory = await ImportHistory.create({
-      nomFichier: fileName,
+      nomFichier,
       nombreLeads: 0,
       nombreSucces: 0,
       nombreEchecs: 0,
-      statut: 'en_cours',
-    })
+      nombreNouveaux: 0,
+      nombreMisesAJour: 0,
+      statut: "en_cours",
+      erreurs: [],
+      changes: [],
+    });
 
     const stats = {
       total: 0,
-      success: 0,
-      errors: 0,
-    }
+      nouveaux: 0,
+      misesAJour: 0,
+      echecs: 0,
+    };
 
-    const errors: string[] = []
-    const rows: CSVRow[] = []
+    const erreurs: string[] = [];
+    const changes: any[] = [];
+    let headerMapping: Map<string, string> | null = null;
 
-    try {
-      // Lire le fichier CSV
-      await new Promise<void>((resolve, reject) => {
-        fs.createReadStream(filePath)
-          .pipe(
-            csvParser({
-              mapHeaders: ({ header }) => header.trim().toLowerCase(),
-            })
-          )
-          .on('data', (row: CSVRow) => {
-            rows.push(row)
-            stats.total++
-          })
-          .on('end', () => resolve())
-          .on('error', (error) => reject(error))
-      })
+    return new Promise((resolve, reject) => {
+      fs.createReadStream(filePath)
+        .pipe(csv({ separator: ";" }))
+        .on("headers", (headers) => {
+          // Créer le mapping au premier passage
+          headerMapping = this.mapHeaders(headers);
+          console.log(
+            "📋 Mapping des colonnes:",
+            Object.fromEntries(headerMapping),
+          );
+        })
+        .on("data", async (row) => {
+          stats.total++;
 
-      console.log(`📊 ${stats.total} lignes trouvées dans le CSV`)
-
-      // Traiter chaque ligne
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i]
-        const lineNumber = i + 2
-
-        try {
-          console.log(`🔍 Ligne ${lineNumber}:`, row)
-
-          // Détecter quelle clé est utilisée pour codePostal
-          const codePostal = row.codepostal || row.code_postal || row.cp || ''
-          const typeInstallation = row.typeinstallation || row.type_installation || ''
-
-          // Valider les champs obligatoires
-          if (!row.nom || !row.prenom || !row.email || !row.mobile || !codePostal || !row.source) {
-            const missingFields = []
-            if (!row.nom) missingFields.push('nom')
-            if (!row.prenom) missingFields.push('prenom')
-            if (!row.email) missingFields.push('email')
-            if (!row.mobile) missingFields.push('mobile')
-            if (!codePostal) missingFields.push('codePostal')
-            if (!row.source) missingFields.push('source')
-
-            throw new Error(`Champs obligatoires manquants: ${missingFields.join(', ')}`)
-          }
-
-          // Générer une ref si non fournie
-          const ref = row.ref?.trim() || this.generateRef()
-
-          // Parser la date
-          const date = row.date ? this.parseDate(row.date) : new Date()
-
-          // Créer ou mettre à jour le lead
-          await Lead.findOneAndUpdate(
-            { ref: ref },
-            {
-              ref: ref,
-              date: date,
-              heure: row.heure?.trim() || new Date().toLocaleTimeString('fr-FR'),
-              nom: row.nom.trim(),
-              prenom: row.prenom.trim(),
-              mobile: row.mobile.trim(),
-              email: row.email.toLowerCase().trim(),
-              adresse: row.adresse?.trim() || '',
-              codePostal: codePostal.trim(), // ← Utilise la variable détectée
-              source: row.source.trim(),
-              telepro: row.telepro?.trim() || '',
-              equipe: row.equipe?.trim() || '',
-              rapport: row.rapport?.trim() || 'NOUVEAU PROSPECT',
-              observation: row.observation?.trim() || '',
-              typeInstallation: typeInstallation.trim(), // ← Utilise la variable détectée
-              importedAt: new Date(),
-            },
-            {
-              upsert: true,
-              new: true,
-              runValidators: true,
+          try {
+            if (!headerMapping) {
+              throw new Error("Header mapping non initialisé");
             }
-          )
 
-          stats.success++
-          console.log(`✅ Ligne ${lineNumber}: Lead créé/mis à jour (${ref})`)
-        } catch (error: any) {
-          stats.errors++
-          const errorMsg = `Ligne ${lineNumber}: ${error.message}`
-          errors.push(errorMsg)
-          console.error(`❌ ${errorMsg}`)
-        }
-      }
+            // Extraire les données avec le mapping
+            const mappedData = this.extractRowData(row, headerMapping);
 
-      // Mettre à jour l'historique
-      await ImportHistory.findByIdAndUpdate(importHistory._id, {
-        nombreLeads: stats.total,
-        nombreSucces: stats.success,
-        nombreEchecs: stats.errors,
-        statut: 'termine',
-        erreurs: errors,
-      })
+            // Parser la date
+            const dateMatch = mappedData.date?.match(
+              /(\d{2})\/(\d{2})\/(\d{4})/,
+            );
+            let parsedDate = new Date();
+            if (dateMatch) {
+              const [, day, month, year] = dateMatch;
+              parsedDate = new Date(`${year}-${month}-${day}`);
+            }
 
-      return {
-        success: true,
-        message: `Import terminé: ${stats.success} réussis, ${stats.errors} échecs`,
-        importHistoryId: importHistory._id.toString(),
-        stats,
-        errors: errors.length > 0 ? errors : undefined,
-      }
-    } catch (error: any) {
-      // En cas d'erreur globale
-      await ImportHistory.findByIdAndUpdate(importHistory._id, {
-        statut: 'echec',
-        erreurs: [error.message],
-      })
+            // Préparer les données du lead
+            const leadData = {
+              ref: mappedData.ref?.trim(),
+              date: parsedDate,
+              heure: mappedData.heure?.trim() || "00:00",
+              nom: mappedData.nom?.trim().toUpperCase(),
+              prenom: mappedData.prenom?.trim(),
+              mobile:
+                mappedData.mobile?.trim() || mappedData.telephone?.trim() || "",
+              email: mappedData.email?.trim().toLowerCase() || "",
+              adresse: mappedData.adresse?.trim() || "",
+              codePostal: mappedData.codePostal?.trim(),
+              source: mappedData.source?.trim(),
+              telepro: mappedData.telepro?.trim() || "",
+              equipe: mappedData.equipe?.trim() || "",
+              rapport: mappedData.rapport?.trim() || "",
+              observation: mappedData.observation?.trim() || "",
+              typeInstallation: mappedData.typeInstallation?.trim() || "",
+            };
 
-      throw new Error(`Erreur lors de l'import: ${error.message}`)
-    }
+            // Valider les champs requis
+            const missingFields = [];
+            if (!leadData.ref) missingFields.push("ref");
+            if (!leadData.nom) missingFields.push("nom");
+            if (!leadData.prenom) missingFields.push("prenom");
+
+            if (missingFields.length > 0) {
+              const errorMsg = `Ligne ${stats.total}: Champs manquants (${missingFields.join(", ")})`;
+              console.log(`❌ ${errorMsg}`);
+              console.log(`   Données reçues:`, {
+                ref: mappedData.ref,
+                nom: mappedData.nom,
+                prenom: mappedData.prenom,
+                mobile: mappedData.mobile,
+                email: mappedData.email,
+              });
+              erreurs.push(errorMsg);
+              stats.echecs++;
+              return;
+            }
+            // ✅ UPSERT : Chercher par ref
+            const existingLead = await Lead.findOne({ ref: leadData.ref });
+
+            if (existingLead) {
+              // ✅ LEAD EXISTE → UPDATE
+              const hasChanged = await this.updateLeadAndDetectChanges(
+                existingLead,
+                leadData,
+                importHistory._id,
+                changes,
+              );
+
+              if (hasChanged) {
+                stats.misesAJour++;
+              }
+            } else {
+              // ✅ NOUVEAU LEAD → INSERT
+              await Lead.create({
+                ...leadData,
+                importedAt: new Date(),
+                lastImportedAt: new Date(),
+                importCount: 1,
+                statusHistory: [
+                  {
+                    newStatus: leadData.rapport,
+                    changedAt: new Date(),
+                    importId: importHistory._id,
+                    source: "import",
+                  },
+                ],
+              });
+              stats.nouveaux++;
+            }
+          } catch (error: any) {
+            console.error(`Erreur ligne ${stats.total}:`, error.message);
+            erreurs.push(`Ligne ${stats.total}: ${error.message}`);
+            stats.echecs++;
+          }
+        })
+        .on("end", async () => {
+          try {
+            const processingTime = (Date.now() - startTime) / 1000;
+
+            // Finaliser l'historique
+            await ImportHistory.updateOne(
+              { _id: importHistory._id },
+              {
+                nombreLeads: stats.total,
+                nombreSucces: stats.nouveaux + stats.misesAJour,
+                nombreEchecs: stats.echecs,
+                nombreNouveaux: stats.nouveaux,
+                nombreMisesAJour: stats.misesAJour,
+                statut: "termine",
+                erreurs,
+                changes,
+                processingTime,
+              },
+            );
+
+            resolve({
+              message: `Import terminé: ${stats.nouveaux} nouveaux, ${stats.misesAJour} mis à jour, ${stats.echecs} erreurs`,
+              importHistoryId: importHistory._id,
+              stats: {
+                total: stats.total,
+                nouveaux: stats.nouveaux,
+                misesAJour: stats.misesAJour,
+                echecs: stats.echecs,
+              },
+              errors: erreurs,
+            });
+          } catch (error: any) {
+            reject(error);
+          }
+        })
+        .on("error", (error) => {
+          reject(error);
+        });
+    });
   }
 
   /**
-   * Valider le format du CSV
+   * Détecter les changements et mettre à jour le lead
    */
-  static async validateCSV(filePath: string): Promise<{ valid: boolean; message: string }> {
-    const requiredHeaders = ['nom', 'prenom', 'email', 'mobile', 'codepostal', 'source'] // ← codepostal en minuscule
+  private static async updateLeadAndDetectChanges(
+    existingLead: any,
+    newData: any,
+    importId: mongoose.Types.ObjectId,
+    changes: any[],
+  ): Promise<boolean> {
+    let hasChanged = false;
+    const fieldsToCheck = [
+      "rapport",
+      "observation",
+      "mobile",
+      "email",
+      "telepro",
+      "equipe",
+    ];
 
-    return new Promise((resolve, reject) => {
-      let headers: string[] = []
+    for (const field of fieldsToCheck) {
+      if (existingLead[field] !== newData[field]) {
+        hasChanged = true;
 
-      fs.createReadStream(filePath)
-        .pipe(
-          csvParser({
-            mapHeaders: ({ header }) => header.trim().toLowerCase(), // ← Normalise tout en minuscule
-          })
-        )
-        .on('headers', (headerList: string[]) => {
-          headers = headerList
-          console.log('📋 Headers CSV détectés:', headers)
-        })
-        .on('data', () => {
-          // On lit juste pour déclencher 'headers'
-        })
-        .on('end', () => {
-          const missingHeaders = requiredHeaders.filter((h) => !headers.includes(h))
+        // ⚠️ CHANGEMENT DE STATUT CRITIQUE
+        if (field === "rapport") {
+          const oldStatus = existingLead.rapport;
+          const newStatus = newData.rapport;
 
-          if (missingHeaders.length > 0) {
-            console.log('❌ Headers manquants:', missingHeaders)
-            resolve({
-              valid: false,
-              message: `Colonnes manquantes: ${missingHeaders.join(', ')}`,
-            })
+          console.log(
+            `📊 Changement statut Lead ${existingLead.ref}: ${oldStatus} → ${newStatus}`,
+          );
+
+          // Si le lead sort du statut NRP → Retirer des campagnes
+          if (oldStatus === "NRP" && newStatus !== "NRP") {
+            await this.removeLeadFromActiveCampaigns(
+              existingLead._id,
+              importId,
+              oldStatus,
+              newStatus,
+            );
+
+            changes.push({
+              leadRef: existingLead.ref,
+              leadId: existingLead._id,
+              field: "rapport",
+              oldValue: oldStatus,
+              newValue: newStatus,
+              action: "removed_from_campaigns",
+              timestamp: new Date(),
+            });
+
+            console.log(
+              `✅ Lead ${existingLead.ref} retiré des campagnes actives`,
+            );
           } else {
-            console.log('✅ Tous les headers requis sont présents')
-            resolve({
-              valid: true,
-              message: 'Format CSV valide',
-            })
+            changes.push({
+              leadRef: existingLead.ref,
+              leadId: existingLead._id,
+              field: "rapport",
+              oldValue: oldStatus,
+              newValue: newStatus,
+              action: "updated",
+              timestamp: new Date(),
+            });
           }
-        })
-        .on('error', (error) => reject(error))
-    })
+
+          // Ajouter à l'historique
+          existingLead.statusHistory.push({
+            oldStatus: oldStatus,
+            newStatus: newStatus,
+            changedAt: new Date(),
+            importId: importId,
+            source: "import",
+          });
+        }
+      }
+    }
+
+    // Mettre à jour le lead
+    if (hasChanged) {
+      Object.assign(existingLead, newData);
+      existingLead.lastImportedAt = new Date();
+      existingLead.importCount = (existingLead.importCount || 0) + 1;
+      await existingLead.save();
+    }
+
+    return hasChanged;
+  }
+
+  /**
+   * Retirer un lead de toutes les campagnes actives
+   */
+  private static async removeLeadFromActiveCampaigns(
+    leadId: mongoose.Types.ObjectId,
+    importId: mongoose.Types.ObjectId,
+    oldStatus: string,
+    newStatus: string,
+  ) {
+    const campaigns = await Campaign.find({
+      "recipients.leadId": leadId,
+      "recipients.status": "pending",
+      status: { $in: ["draft", "scheduled"] },
+    });
+
+    console.log(
+      `🔍 ${campaigns.length} campagne(s) trouvée(s) pour le lead ${leadId}`,
+    );
+
+    for (const campaign of campaigns) {
+      const recipientIndex = campaign.recipients.findIndex(
+        (r) =>
+          r.leadId.toString() === leadId.toString() && r.status === "pending",
+      );
+
+      if (recipientIndex !== -1) {
+        campaign.recipients[recipientIndex].status = "removed";
+        campaign.recipients[recipientIndex].removedAt = new Date();
+        campaign.recipients[recipientIndex].removeReason = "status_changed";
+        campaign.recipients[recipientIndex].removeDetails = {
+          importId,
+          oldStatus,
+          newStatus,
+        };
+
+        campaign.removedCount = (campaign.removedCount || 0) + 1;
+        await campaign.save();
+
+        console.log(`✅ Lead retiré de la campagne: ${campaign.name}`);
+      }
+    }
   }
 }

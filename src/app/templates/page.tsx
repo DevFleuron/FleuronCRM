@@ -1,61 +1,54 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Plus, Search } from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
 import { ConfirmModal } from "@/src/components/ui/ConfirmModal";
 import { TemplateCard } from "@/src/components/features/templates/TemplateCard";
 import { TemplateModal } from "@/src/components/features/templates/TemplateModal";
 import { useToast } from "@/src/components/contexts/ToastContext";
+import { ApiService } from "@/src/lib/api";
 import type { Template, TemplateFormData } from "@/src/types";
-
-const MOCK_TEMPLATES: Template[] = [
-  {
-    _id: "1",
-    name: "Relance NRP - Premier contact",
-    type: "sms",
-    content:
-      "Bonjour {{prenom}} {{nom}}, nous revenons vers vous concernant votre projet {{typeInstallation}}. Êtes-vous disponible pour en discuter ? REF: {{ref}}",
-    variables: ["prenom", "nom", "typeInstallation", "ref"],
-    createdAt: new Date("2026-01-20"),
-    usageCount: 45,
-  },
-  {
-    _id: "2",
-    name: "Email de suivi ITE",
-    type: "email",
-    subject: "Votre projet d'isolation - REF {{ref}}",
-    content:
-      "Bonjour {{prenom}},\n\nNous revenons vers vous concernant votre demande d'isolation thermique extérieure.\n\nNotre équipe est disponible pour répondre à vos questions.\n\nCordialement,\nL'équipe Fleuron Industries",
-    variables: ["prenom", "ref"],
-    createdAt: new Date("2026-01-15"),
-    usageCount: 23,
-  },
-  {
-    _id: "3",
-    name: "Rappel RDV",
-    type: "sms",
-    content:
-      "Rappel : RDV prévu demain pour votre projet {{typeInstallation}}. Confirmez-vous ? REF: {{ref}}",
-    variables: ["typeInstallation", "ref"],
-    createdAt: new Date("2026-01-10"),
-    usageCount: 67,
-  },
-];
 
 export default function TemplatesPage() {
   const { showToast } = useToast();
-  const [templates, setTemplates] = useState<Template[]>(MOCK_TEMPLATES);
+  const [templates, setTemplates] = useState<Template[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<
     Template | undefined
   >();
   const [typeFilter, setTypeFilter] = useState<"all" | "sms" | "email">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
 
   // Confirmation modal
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // ✅ Charger les templates au montage
+  useEffect(() => {
+    loadTemplates();
+  }, []);
+
+  // ✅ Fonction pour charger les templates
+  const loadTemplates = async () => {
+    try {
+      setLoading(true);
+      const response = await ApiService.getTemplates();
+
+      if (response.success) {
+        setTemplates(response.data);
+        console.log(`✅ ${response.data.length} templates chargés`);
+      } else {
+        showToast("error", "Erreur", "Impossible de charger les templates");
+      }
+    } catch (error: any) {
+      console.error("❌ Erreur loadTemplates:", error);
+      showToast("error", "Erreur", "Erreur lors du chargement des templates");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredTemplates = templates.filter((template) => {
     const matchesType = typeFilter === "all" || template.type === typeFilter;
@@ -65,43 +58,52 @@ export default function TemplatesPage() {
     return matchesType && matchesSearch;
   });
 
-  const handleSave = (data: TemplateFormData) => {
-    if (editingTemplate) {
-      // Update
-      setTemplates(
-        templates.map((t) =>
-          t._id === editingTemplate._id
-            ? {
-                ...t,
-                ...data,
-                variables: extractVariables(data.content),
-                updatedAt: new Date(),
-              }
-            : t,
-        ),
-      );
+  // ✅ Sauvegarder (create ou update)
+  const handleSave = async (data: TemplateFormData) => {
+    try {
+      if (editingTemplate) {
+        // UPDATE
+        const response = await ApiService.updateTemplate(
+          editingTemplate._id!,
+          data,
+        );
+
+        if (response.success) {
+          showToast(
+            "success",
+            "Template modifié",
+            "Le template a été modifié avec succès",
+          );
+          await loadTemplates(); // Recharger
+        } else {
+          showToast("error", "Erreur", response.message);
+        }
+      } else {
+        // CREATE
+        const response = await ApiService.createTemplate(data);
+
+        if (response.success) {
+          showToast(
+            "success",
+            "Template créé",
+            "Le template a été créé avec succès",
+          );
+          await loadTemplates(); // Recharger
+        } else {
+          showToast("error", "Erreur", response.message);
+        }
+      }
+
+      setEditingTemplate(undefined);
+      setIsModalOpen(false);
+    } catch (error: any) {
+      console.error("❌ Erreur handleSave:", error);
       showToast(
-        "success",
-        "Template modifié",
-        "Le template a été modifié avec succès",
-      );
-    } else {
-      // Create
-      const newTemplate: Template = {
-        _id: Date.now().toString(),
-        ...data,
-        variables: extractVariables(data.content),
-        createdAt: new Date(),
-        usageCount: 0,
-      };
-      setTemplates([newTemplate, ...templates]);
-      showToast(
-        "success",
-        "Template créé",
-        "Le template a été créé avec succès",
+        "error",
+        "Erreur",
+        error.message || "Erreur lors de la sauvegarde",
       );
     }
-    setEditingTemplate(undefined);
   };
 
   const handleEdit = (template: Template) => {
@@ -114,23 +116,47 @@ export default function TemplatesPage() {
     setIsConfirmOpen(true);
   };
 
-  const confirmDelete = () => {
-    if (deleteId) {
-      setTemplates(templates.filter((t) => t._id !== deleteId));
+  // ✅ Confirmer la suppression
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+
+    try {
+      const response = await ApiService.deleteTemplate(deleteId);
+
+      if (response.success) {
+        showToast(
+          "success",
+          "Template supprimé",
+          "Le template a été supprimé avec succès",
+        );
+        await loadTemplates(); // Recharger
+      } else {
+        showToast("error", "Erreur", response.message);
+      }
+    } catch (error: any) {
+      console.error("❌ Erreur confirmDelete:", error);
       showToast(
-        "success",
-        "Template supprimé",
-        "Le template a été supprimé avec succès",
+        "error",
+        "Erreur",
+        error.message || "Erreur lors de la suppression",
       );
+    } finally {
+      setDeleteId(null);
+      setIsConfirmOpen(false);
     }
-    setDeleteId(null);
   };
 
-  const extractVariables = (content: string): string[] => {
-    const regex = /{{(\w+)}}/g;
-    const matches = content.matchAll(regex);
-    return Array.from(new Set(Array.from(matches, (m) => m[1])));
-  };
+  // ✅ Loader pendant le chargement
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-400">Chargement des templates...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -141,7 +167,8 @@ export default function TemplatesPage() {
             Templates de relance
           </h1>
           <p className="text-slate-400 text-sm md:text-base">
-            Créez et gérez vos modèles de messages réutilisables
+            Créez et gérez vos modèles de messages réutilisables (
+            {templates.length} templates)
           </p>
         </div>
         <Button
@@ -151,7 +178,7 @@ export default function TemplatesPage() {
             setEditingTemplate(undefined);
             setIsModalOpen(true);
           }}
-          className="w-full lg:w-auto rounded-xl"
+          className="w-full lg:w-auto"
         >
           Nouveau Template
         </Button>
@@ -211,7 +238,11 @@ export default function TemplatesPage() {
       {/* Templates Grid */}
       {filteredTemplates.length === 0 ? (
         <div className="bg-[#111114] border border-slate-800 rounded-2xl p-12 text-center">
-          <p className="text-slate-400">Aucun template trouvé</p>
+          <p className="text-slate-400">
+            {searchQuery || typeFilter !== "all"
+              ? "Aucun template trouvé"
+              : "Aucun template. Créez-en un pour commencer !"}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

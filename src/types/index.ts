@@ -15,10 +15,13 @@ export interface Lead {
   rapport:
     | "NOUVEAU PROSPECT"
     | "NRP"
-    | "CLIENT"
-    | "PERDU"
-    | "RDV PRIS"
-    | "A RAPPELER";
+    | "NRP 1"
+    | "NRP 2"
+    | "NRP 2"
+    | "NRP 3"
+    | "NRP 4"
+    | "NRP 5"
+    | "DEVIS ENVOYE";
   observation: string;
   typeInstallation: string;
 

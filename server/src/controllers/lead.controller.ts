@@ -1,437 +1,196 @@
-import { Request, Response } from 'express'
-import Lead from '../models/Lead.model'
-
-/**
- * CONTRÔLEUR DES LEADS
- * Contient toute la logique métier pour les endpoints
- */
+import { Request, Response } from "express";
+import Lead from "../models/Lead.model";
+import Campaign from "../models/Campaign.model";
 
 /**
  * GET /api/leads
- * Récupérer tous les leads avec pagination et filtres
+ * Récupérer tous les leads avec filtres
  */
-export const getAllLeads = async (req: Request, res: Response): Promise<void> => {
+export const getLeads = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Paramètres de pagination (depuis l'URL)
-    const page = parseInt(req.query.page as string) || 1
-    const limit = parseInt(req.query.limit as string) || 10
-    const skip = (page - 1) * limit
-
-    // Paramètres de filtre
-    const rapport = req.query.rapport as string
-    const source = req.query.source as string
-    const search = req.query.search as string
-    const equipe = req.query.equipe as string
+    const {
+      rapport,
+      source,
+      dateFrom,
+      dateTo,
+      typeInstallation,
+      smsEnvoye,
+      emailEnvoye,
+      search,
+      limit = 50,
+      skip = 0,
+    } = req.query;
 
     // Construire le filtre
-    let filter: any = {}
+    const filter: any = {};
 
-    if (rapport) {
-      filter.rapport = rapport
+    if (rapport) filter.rapport = rapport;
+    if (source) filter.source = source;
+    if (typeInstallation) filter.typeInstallation = typeInstallation;
+
+    // Filtres dates
+    if (dateFrom || dateTo) {
+      filter.date = {};
+      if (dateFrom) filter.date.$gte = new Date(dateFrom as string);
+      if (dateTo) filter.date.$lte = new Date(dateTo as string);
     }
 
-    if (source) {
-      filter.source = source
-    }
+    // Filtres SMS/Email
+    if (smsEnvoye === "yes") filter.smsEnvoye = true;
+    if (smsEnvoye === "no") filter.smsEnvoye = false;
+    if (emailEnvoye === "yes") filter.emailEnvoye = true;
+    if (emailEnvoye === "no") filter.emailEnvoye = false;
 
-    if (equipe) {
-      filter.equipe = equipe
-    }
-
+    // Recherche textuelle
     if (search) {
-      // Recherche dans nom, prenom, email, mobile, ref
       filter.$or = [
-        { nom: { $regex: search, $options: 'i' } }, // i = insensible à la casse
-        { prenom: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { mobile: { $regex: search, $options: 'i' } },
-        { ref: { $regex: search, $options: 'i' } },
-      ]
+        { nom: { $regex: search, $options: "i" } },
+        { prenom: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { mobile: { $regex: search, $options: "i" } },
+        { ref: { $regex: search, $options: "i" } },
+      ];
     }
 
-    // Récupérer les leads
     const leads = await Lead.find(filter)
-      .sort({ date: -1, createdAt: -1 }) // Trier par date décroissante
-      .skip(skip)
-      .limit(limit)
+      .sort({ date: -1 })
+      .limit(Number(limit))
+      .skip(Number(skip));
 
-    // Compter le total (pour la pagination)
-    const total = await Lead.countDocuments(filter)
+    const total = await Lead.countDocuments(filter);
 
-    // Réponse
     res.status(200).json({
       success: true,
       data: leads,
       pagination: {
-        page,
-        limit,
         total,
-        pages: Math.ceil(total / limit),
+        limit: Number(limit),
+        skip: Number(skip),
       },
-    })
+    });
   } catch (error: any) {
-    console.error('❌ Erreur getAllLeads:', error)
+    console.error("❌ Erreur getLeads:", error);
     res.status(500).json({
       success: false,
-      message: 'Erreur lors de la récupération des leads',
+      message: "Erreur lors de la récupération des leads",
       error: error.message,
-    })
+    });
   }
-}
+};
 
 /**
  * GET /api/leads/:id
- * Récupérer un lead spécifique par son ID
+ * Récupérer un lead par ID
  */
-export const getLeadById = async (req: Request, res: Response): Promise<void> => {
+export const getLeadById = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
-    const { id } = req.params
+    const { id } = req.params;
 
-    const lead = await Lead.findById(id)
+    const lead = await Lead.findById(id);
 
     if (!lead) {
       res.status(404).json({
         success: false,
-        message: 'Lead non trouvé',
-      })
-      return
+        message: "Lead non trouvé",
+      });
+      return;
     }
 
     res.status(200).json({
       success: true,
       data: lead,
-    })
+    });
   } catch (error: any) {
-    console.error('❌ Erreur getLeadById:', error)
+    console.error("❌ Erreur getLeadById:", error);
     res.status(500).json({
       success: false,
-      message: 'Erreur lors de la récupération du lead',
+      message: "Erreur lors de la récupération du lead",
       error: error.message,
-    })
+    });
   }
-}
+};
 
 /**
- * GET /api/leads/ref/:ref
- * Récupérer un lead par sa référence
+ * PATCH /api/leads/:id
+ * Mettre à jour un lead
  */
-export const getLeadByRef = async (req: Request, res: Response): Promise<void> => {
+export const updateLead = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
-    const { ref } = req.params
+    const { id } = req.params;
+    const updates = req.body;
 
-    const lead = await Lead.findOne({ ref })
+    const lead = await Lead.findById(id);
 
     if (!lead) {
       res.status(404).json({
         success: false,
-        message: 'Lead non trouvé',
-      })
-      return
+        message: "Lead non trouvé",
+      });
+      return;
     }
 
-    res.status(200).json({
-      success: true,
-      data: lead,
-    })
-  } catch (error: any) {
-    console.error('❌ Erreur getLeadByRef:', error)
-    res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la récupération du lead',
-      error: error.message,
-    })
-  }
-}
+    // Si changement de statut, ajouter à l'historique
+    if (updates.rapport && updates.rapport !== lead.rapport) {
+      lead.statusHistory.push({
+        oldStatus: lead.rapport,
+        newStatus: updates.rapport,
+        changedAt: new Date(),
+        source: "manual",
+      });
 
-/**
- * POST /api/leads
- * Créer un nouveau lead manuellement
- */
-export const createLead = async (req: Request, res: Response): Promise<void> => {
-  try {
-    console.log('🎯 createLead appelé !')
-    console.log('📥 Body reçu:', JSON.stringify(req.body, null, 2))
-    console.log('📋 Headers:', req.headers)
-
-    const leadData = req.body
-
-    // Vérifier si la référence existe déjà
-    if (leadData.ref) {
-      console.log('🔍 Vérification de la référence:', leadData.ref)
-      const existingLead = await Lead.findOne({ ref: leadData.ref })
-
-      if (existingLead) {
-        console.log('⚠️ Lead existe déjà')
-        res.status(400).json({
-          success: false,
-          message: 'Un lead avec cette référence existe déjà',
-        })
-        return
+      // Si le lead sort du statut NRP, le retirer des campagnes
+      if (lead.rapport === "NRP" && updates.rapport !== "NRP") {
+        await removeLeadFromActiveCampaigns(lead._id);
       }
     }
 
-    // Générer une référence si non fournie
-    if (!leadData.ref) {
-      const timestamp = Date.now()
-      const random = Math.floor(Math.random() * 10000)
-      leadData.ref = `LEAD-${timestamp}-${random}`
-      console.log('✨ Référence générée:', leadData.ref)
-    }
+    // Appliquer les modifications
+    Object.assign(lead, updates);
+    await lead.save();
 
-    // Valeurs par défaut
-    if (!leadData.rapport) {
-      leadData.rapport = 'NOUVEAU PROSPECT'
-    }
-
-    if (!leadData.date) {
-      leadData.date = new Date()
-    }
-
-    if (!leadData.heure) {
-      leadData.heure = new Date().toLocaleTimeString('fr-FR')
-    }
-
-    console.log('💾 Création du lead dans MongoDB...')
-    // Créer le lead
-    const lead = await Lead.create(leadData)
-    console.log('✅ Lead créé avec succès:', lead._id)
-
-    res.status(201).json({
+    res.status(200).json({
       success: true,
-      message: 'Lead créé avec succès',
+      message: "Lead mis à jour avec succès",
       data: lead,
-    })
+    });
   } catch (error: any) {
-    console.error('❌ Erreur createLead:', error)
+    console.error("❌ Erreur updateLead:", error);
     res.status(500).json({
       success: false,
-      message: 'Erreur lors de la création du lead',
+      message: "Erreur lors de la mise à jour du lead",
       error: error.message,
-    })
+    });
   }
-}
+};
 
 /**
- * PUT /api/leads/:id
- * Mettre à jour un lead
+ * Fonction helper pour retirer un lead des campagnes
  */
-export const updateLead = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params
-    const updateData = req.body
+async function removeLeadFromActiveCampaigns(leadId: any) {
+  const campaigns = await Campaign.find({
+    "recipients.leadId": leadId,
+    "recipients.status": "pending",
+    status: { $in: ["draft", "scheduled"] },
+  });
 
-    // Mettre à jour lastContactDate si le rapport change
-    if (updateData.rapport && updateData.rapport !== 'NOUVEAU PROSPECT') {
-      updateData.lastContactDate = new Date()
+  for (const campaign of campaigns) {
+    const recipientIndex = campaign.recipients.findIndex(
+      (r) =>
+        r.leadId.toString() === leadId.toString() && r.status === "pending",
+    );
+
+    if (recipientIndex !== -1) {
+      campaign.recipients[recipientIndex].status = "removed";
+      campaign.recipients[recipientIndex].removedAt = new Date();
+      campaign.recipients[recipientIndex].removeReason = "status_changed";
+      campaign.removedCount = (campaign.removedCount || 0) + 1;
+      await campaign.save();
     }
-
-    const lead = await Lead.findByIdAndUpdate(id, updateData, {
-      new: true, // Retourne le document mis à jour
-      runValidators: true, // Exécute les validations
-    })
-
-    if (!lead) {
-      res.status(404).json({
-        success: false,
-        message: 'Lead non trouvé',
-      })
-      return
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Lead mis à jour avec succès',
-      data: lead,
-    })
-  } catch (error: any) {
-    console.error('❌ Erreur updateLead:', error)
-    res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la mise à jour du lead',
-      error: error.message,
-    })
-  }
-}
-
-/**
- * DELETE /api/leads/:id
- * Supprimer un lead
- */
-export const deleteLead = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params
-
-    const lead = await Lead.findByIdAndDelete(id)
-
-    if (!lead) {
-      res.status(404).json({
-        success: false,
-        message: 'Lead non trouvé',
-      })
-      return
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Lead supprimé avec succès',
-    })
-  } catch (error: any) {
-    console.error('❌ Erreur deleteLead:', error)
-    res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la suppression du lead',
-      error: error.message,
-    })
-  }
-}
-
-/**
- * GET /api/leads/stats
- * Récupérer les statistiques des leads
- */
-export const getLeadsStats = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const total = await Lead.countDocuments()
-    const nouveauProspect = await Lead.countDocuments({ rapport: 'NOUVEAU PROSPECT' })
-    const nrp = await Lead.countDocuments({ rapport: 'NRP' })
-    const client = await Lead.countDocuments({ rapport: 'CLIENT' })
-    const perdu = await Lead.countDocuments({ rapport: 'PERDU' })
-    const rdvPris = await Lead.countDocuments({ rapport: 'RDV PRIS' })
-    const aRappeler = await Lead.countDocuments({ rapport: 'A RAPPELER' })
-
-    // Stats par source
-    const statsBySource = await Lead.aggregate([
-      {
-        $group: {
-          _id: '$source',
-          count: { $sum: 1 },
-        },
-      },
-      {
-        $sort: { count: -1 },
-      },
-    ])
-
-    // Stats par équipe
-    const statsByEquipe = await Lead.aggregate([
-      {
-        $match: { equipe: { $ne: '' } }, // Exclure les équipes vides
-      },
-      {
-        $group: {
-          _id: '$equipe',
-          count: { $sum: 1 },
-        },
-      },
-      {
-        $sort: { count: -1 },
-      },
-    ])
-
-    res.status(200).json({
-      success: true,
-      data: {
-        total,
-        parRapport: {
-          nouveauProspect,
-          nrp,
-          client,
-          perdu,
-          rdvPris,
-          aRappeler,
-        },
-        parSource: statsBySource,
-        parEquipe: statsByEquipe,
-      },
-    })
-  } catch (error: any) {
-    console.error('❌ Erreur getLeadsStats:', error)
-    res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la récupération des statistiques',
-      error: error.message,
-    })
-  }
-}
-
-/**
- * PATCH /api/leads/:id/sms
- * Marquer un SMS comme envoyé
- */
-export const markSmsAsSent = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params
-
-    const lead = await Lead.findByIdAndUpdate(
-      id,
-      {
-        smsEnvoye: true,
-        smsSentAt: new Date(),
-        $inc: { smsCount: 1 }, // Incrémenter le compteur
-      },
-      { new: true }
-    )
-
-    if (!lead) {
-      res.status(404).json({
-        success: false,
-        message: 'Lead non trouvé',
-      })
-      return
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'SMS marqué comme envoyé',
-      data: lead,
-    })
-  } catch (error: any) {
-    console.error('❌ Erreur markSmsAsSent:', error)
-    res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la mise à jour',
-      error: error.message,
-    })
-  }
-}
-
-/**
- * PATCH /api/leads/:id/email
- * Marquer un email comme envoyé
- */
-export const markEmailAsSent = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params
-
-    const lead = await Lead.findByIdAndUpdate(
-      id,
-      {
-        emailEnvoye: true,
-        emailSentAt: new Date(),
-        $inc: { emailCount: 1 }, // Incrémenter le compteur
-      },
-      { new: true }
-    )
-
-    if (!lead) {
-      res.status(404).json({
-        success: false,
-        message: 'Lead non trouvé',
-      })
-      return
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Email marqué comme envoyé',
-      data: lead,
-    })
-  } catch (error: any) {
-    console.error('❌ Erreur markEmailAsSent:', error)
-    res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la mise à jour',
-      error: error.message,
-    })
   }
 }

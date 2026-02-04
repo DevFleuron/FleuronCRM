@@ -1,24 +1,38 @@
-import mongoose, { Document, Schema } from 'mongoose'
+import mongoose, { Document, Schema } from "mongoose";
+
+/**
+ * Interface pour un changement détecté
+ */
+export interface IDetectedChange {
+  leadRef: string;
+  leadId: mongoose.Types.ObjectId;
+  field: string; // 'rapport', 'mobile', 'email', etc.
+  oldValue: string;
+  newValue: string;
+  action: "updated" | "removed_from_campaigns" | "none";
+  timestamp: Date;
+}
 
 /**
  * Interface pour l'historique d'import
  */
 export interface IImportHistory {
-  nomFichier: string
-  nombreLeads: number
-  nombreSucces: number
-  nombreEchecs: number
-  dateImport: Date
-  statut: 'en_cours' | 'termine' | 'echec'
-  erreurs?: string[] // Liste des erreurs rencontrées
-  utilisateur?: string // ID de l'utilisateur (optionnel)
+  nomFichier: string;
+  nombreLeads: number;
+  nombreSucces: number;
+  nombreEchecs: number;
+  nombreMisesAJour: number; // ✅ NOUVEAU : Nombre de leads mis à jour
+  nombreNouveaux: number; // ✅ NOUVEAU : Nombre de nouveaux leads
+  dateImport: Date;
+  statut: "en_cours" | "termine" | "echec";
+  erreurs?: string[];
+  changes?: IDetectedChange[]; // ✅ NOUVEAU : Liste des changements détectés
+  processingTime?: number; // ✅ NOUVEAU : Temps de traitement en secondes
+  utilisateur?: string;
 }
 
 export interface IImportHistoryDocument extends IImportHistory, Document {}
 
-/**
- * Schema pour l'historique d'import
- */
 const ImportHistorySchema: Schema = new Schema(
   {
     nomFichier: {
@@ -29,7 +43,7 @@ const ImportHistorySchema: Schema = new Schema(
     nombreLeads: {
       type: Number,
       required: true,
-      min: 0, // Nombre positif ou zéro
+      min: 0,
     },
     nombreSucces: {
       type: Number,
@@ -41,18 +55,49 @@ const ImportHistorySchema: Schema = new Schema(
       required: true,
       min: 0,
     },
+    nombreMisesAJour: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    nombreNouveaux: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     dateImport: {
       type: Date,
       default: Date.now,
     },
     statut: {
       type: String,
-      enum: ['en_cours', 'termine', 'echec'],
-      default: 'en_cours',
+      enum: ["en_cours", "termine", "echec"],
+      default: "en_cours",
     },
     erreurs: {
-      type: [String], // Tableau de strings
+      type: [String],
       default: [],
+    },
+    changes: {
+      type: [
+        {
+          leadRef: { type: String, required: true },
+          leadId: { type: Schema.Types.ObjectId, ref: "Lead", required: true },
+          field: { type: String, required: true },
+          oldValue: { type: String },
+          newValue: { type: String },
+          action: {
+            type: String,
+            enum: ["updated", "removed_from_campaigns", "none"],
+            default: "updated",
+          },
+          timestamp: { type: Date, default: Date.now },
+        },
+      ],
+      default: [],
+    },
+    processingTime: {
+      type: Number, // en secondes
     },
     utilisateur: {
       type: String,
@@ -60,10 +105,12 @@ const ImportHistorySchema: Schema = new Schema(
   },
   {
     timestamps: true,
-  }
-)
+  },
+);
 
-// Index pour récupérer rapidement les derniers imports
-ImportHistorySchema.index({ dateImport: -1 })
+ImportHistorySchema.index({ dateImport: -1 });
 
-export default mongoose.model<IImportHistoryDocument>('ImportHistory', ImportHistorySchema)
+export default mongoose.model<IImportHistoryDocument>(
+  "ImportHistory",
+  ImportHistorySchema,
+);

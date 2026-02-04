@@ -48,11 +48,15 @@ export function TemplateModal({
         content: "",
       });
     }
+    setShowPreview(false); // Reset preview
   }, [template, isOpen]);
 
   if (!isOpen) return null;
 
   const handleSave = () => {
+    console.log("🔍 handleSave appelé avec:", formData); // ← DEBUG
+
+    // Validation
     if (!formData.name || !formData.content) {
       showToast(
         "error",
@@ -71,12 +75,14 @@ export function TemplateModal({
       return;
     }
 
+    console.log("✅ Validation OK, appel onSave"); // ← DEBUG
     onSave(formData);
-    onClose();
   };
 
   const insertVariable = (variable: string) => {
     const textarea = document.getElementById("content") as HTMLTextAreaElement;
+    if (!textarea) return;
+
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const text = formData.content;
@@ -184,8 +190,10 @@ export function TemplateModal({
                 <button
                   key={variable.key}
                   onClick={() => insertVariable(variable.key)}
+                  type="button"
                   className="px-3 py-1.5 bg-slate-800 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-400 rounded-lg text-sm font-medium transition-colors border border-slate-700 hover:border-indigo-500/50"
                 >
+                  <Plus className="w-3 h-3 inline mr-1" />
                   {variable.label}
                 </button>
               ))}
@@ -203,6 +211,7 @@ export function TemplateModal({
               </label>
               <button
                 onClick={() => setShowPreview(!showPreview)}
+                type="button"
                 className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300"
               >
                 <Eye className="w-3 h-3" />
@@ -250,7 +259,7 @@ export function TemplateModal({
           <Button variant="secondary" onClick={onClose}>
             Annuler
           </Button>
-          <Button variant="primary" onClick={handleSave}>
+          <Button variant="primary" onClick={handleSave} type="button">
             {template ? "Enregistrer" : "Créer le template"}
           </Button>
         </div>

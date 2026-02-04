@@ -1,15 +1,21 @@
-import { Router } from 'express'
+import express from "express";
 import {
   getImportHistory,
-  getImportById,
-  deleteImportHistory,
-  getImportStats,
-} from '../controllers/history.contoller'
+  getImportHistoryById,
+} from "../controllers/history.controller";
 
-const router = Router()
-router.get('/stats', getImportStats)
-router.get('/', getImportHistory)
-router.get('/:id', getImportById)
-router.delete('/:id', deleteImportHistory)
+const router = express.Router();
 
-export default router
+/**
+ * @route   GET /api/history
+ * @desc    Récupérer l'historique des imports
+ */
+router.get("/", getImportHistory);
+
+/**
+ * @route   GET /api/history/:id
+ * @desc    Récupérer un import spécifique avec détails
+ */
+router.get("/:id", getImportHistoryById);
+
+export default router;

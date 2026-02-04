@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { ArrowLeft, ArrowRight, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/src/components/ui/Button";
 import { ConfirmModal } from "@/src/components/ui/ConfirmModal";
 import { useToast } from "@/src/components/contexts/ToastContext";
+import { ApiService } from "@/src/lib/api"; // ✅ AJOUTÉ
 import { WizardProgress } from "./WizardProgress";
 import { WizardStep1 } from "./WizardStep1";
 import { WizardStep2 } from "./WizardStep2";
@@ -69,6 +70,7 @@ export function CampaignWizard({ leads, templates }: CampaignWizardProps) {
   };
 
   const handleNext = () => {
+    console.log("currentStep:", currentStep);
     if (currentStep === 1) {
       if (selectedLeadIds.length === 0) {
         showToast(
@@ -140,7 +142,7 @@ export function CampaignWizard({ leads, templates }: CampaignWizardProps) {
     setIsConfirmOpen(true);
   };
 
-  // Envoi après confirmation
+  // ✅ Envoi après confirmation
   const handleConfirmSend = async () => {
     setIsSubmitting(true);
 
@@ -150,34 +152,48 @@ export function CampaignWizard({ leads, templates }: CampaignWizardProps) {
         type: campaignType,
         templateId: selectedTemplateId,
         recipients: selectedLeadIds,
-        scheduledAt: scheduledAt,
+        scheduledAt: scheduledAt ? scheduledAt.toISOString() : undefined,
       };
 
-      console.log("Creating campaign:", campaignData);
+      console.log("📤 Création campagne:", campaignData);
 
-      // Simuler l'appel API
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const response = await ApiService.createCampaign(campaignData);
 
-      // Afficher le toast de succès
-      showToast(
-        "success",
-        "Campagne créée !",
-        scheduledAt
-          ? `"${campaignName}" sera envoyée le ${scheduledAt.toLocaleDateString("fr-FR")}`
-          : `"${campaignName}" est en cours d'envoi`,
-      );
+      console.log("📦 Réponse:", response);
 
-      router.push("/campaign/history");
-    } catch (error) {
-      console.error("Error creating campaign:", error);
+      if (response.success) {
+        showToast(
+          "success",
+          "Campagne créée !",
+          scheduledAt
+            ? `"${campaignName}" sera envoyée le ${scheduledAt.toLocaleDateString("fr-FR")}`
+            : `"${campaignName}" est en cours d'envoi`,
+        );
+
+        // Attendre 1.5s pour voir le toast
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+
+        router.push("/campaigns/history");
+      } else {
+        showToast(
+          "error",
+          "Erreur",
+          response.message || "Erreur lors de la création",
+        );
+        setIsSubmitting(false);
+        setIsConfirmOpen(false);
+      }
+    } catch (error: any) {
+      console.error("❌ Erreur création campagne:", error);
       showToast(
         "error",
         "Erreur",
-        "Une erreur est survenue lors de la création de la campagne",
+        error.message || "Erreur lors de la création de la campagne",
       );
       setIsSubmitting(false);
+      setIsConfirmOpen(false);
     }
-  };
+  }; // ✅ ACCOLADE FERMANTE AJOUTÉE
 
   return (
     <div className="space-y-8">
@@ -264,6 +280,7 @@ export function CampaignWizard({ leads, templates }: CampaignWizardProps) {
               variant="primary"
               size="lg"
               onClick={handleSendClick}
+              disabled={isSubmitting}
               className="flex-1 sm:flex-initial"
             >
               <Send className="w-5 h-5" />
