@@ -1,8 +1,9 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-/**
+/*
  * INTERFACE pour l'historique des changements de statut
  */
+
 export interface IStatusHistory {
   oldStatus: string;
   newStatus: string;
@@ -11,9 +12,10 @@ export interface IStatusHistory {
   source: "import" | "manual" | "webhook"; // Source du changement
 }
 
-/**
+/*
  * INTERFACE pour les stats Brevo
  */
+
 export interface IBrevoStats {
   smsDelivered: number;
   smsOpened: number;
@@ -30,9 +32,10 @@ export interface IBrevoStats {
   lastEmailClickedAt?: Date;
 }
 
-/**
+/*
  * INTERFACE TypeScript pour un Lead
  */
+
 export interface ILead {
   ref: string; // Référence unique du lead
   date: Date;
@@ -53,11 +56,12 @@ export interface ILead {
     | "PERDU"
     | "RDV PRIS"
     | "A RAPPELER"
-    | "DEVIS ENVOYE"; // ✅ Ajouté
+    | "DEVIS ENVOYE";
   observation?: string;
   typeInstallation?: string;
 
   // Gestion des SMS (DEPRECATED - gardé pour compatibilité)
+
   smsEnvoye: boolean;
   smsSentAt?: Date;
   smsCount: number;
@@ -67,24 +71,26 @@ export interface ILead {
   emailSentAt?: Date;
   emailCount: number;
 
-  // ✅ NOUVEAU : Stats Brevo détaillées
+  // Stats Brevo détaillées
   brevoStats: IBrevoStats;
 
-  // ✅ NOUVEAU : Historique des changements
+  // Historique des changements
   statusHistory: IStatusHistory[];
 
   // Dates de suivi
+
   importedAt: Date;
-  lastImportedAt?: Date; // ✅ Date du dernier import
-  importCount: number; // ✅ Nombre d'imports
+  lastImportedAt?: Date;
+  importCount: number;
   lastContactDate?: Date;
 }
 
 export interface ILeadDocument extends ILead, Document {}
 
-/**
+/*
  * SCHEMA Mongoose
  */
+
 const LeadSchema: Schema = new Schema<ILeadDocument>(
   {
     ref: {
@@ -174,6 +180,7 @@ const LeadSchema: Schema = new Schema<ILeadDocument>(
     },
 
     // Gestion des SMS (DEPRECATED - gardé pour compatibilité)
+
     smsEnvoye: {
       type: Boolean,
       default: false,
@@ -187,6 +194,7 @@ const LeadSchema: Schema = new Schema<ILeadDocument>(
     },
 
     // Gestion des emails (DEPRECATED - gardé pour compatibilité)
+
     emailEnvoye: {
       type: Boolean,
       default: false,
@@ -199,7 +207,8 @@ const LeadSchema: Schema = new Schema<ILeadDocument>(
       default: 0,
     },
 
-    // ✅ NOUVEAU : Stats Brevo détaillées
+    //  Stats Brevo détaillées
+
     brevoStats: {
       type: {
         smsDelivered: { type: Number, default: 0 },
@@ -227,7 +236,8 @@ const LeadSchema: Schema = new Schema<ILeadDocument>(
       }),
     },
 
-    // ✅ NOUVEAU : Historique des changements
+    // Historique des changements
+
     statusHistory: {
       type: [
         {
@@ -246,6 +256,7 @@ const LeadSchema: Schema = new Schema<ILeadDocument>(
     },
 
     // Dates
+
     importedAt: {
       type: Date,
       default: Date.now,
@@ -267,6 +278,7 @@ const LeadSchema: Schema = new Schema<ILeadDocument>(
 );
 
 // Index
+
 LeadSchema.index({ rapport: 1, date: -1 });
 LeadSchema.index({ ref: 1 });
 LeadSchema.index({ email: 1 });

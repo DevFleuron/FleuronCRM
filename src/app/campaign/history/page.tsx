@@ -1,133 +1,101 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { Search, Filter, Plus } from "lucide-react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { Plus, Search } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/src/components/ui/Button";
 import { CampaignTable } from "@/src/components/features/campaigns/CampaignTable";
 import { CampaignCard } from "@/src/components/features/campaigns/CampaignCard";
 import { CampaignDetailsModal } from "@/src/components/features/campaigns/CampaignDetailsModal";
+import { useToast } from "@/src/components/contexts/ToastContext";
+import { ApiService } from "@/src/lib/api";
 import type { Campaign } from "@/src/types";
-
-// Données mockées
-const MOCK_CAMPAIGNS: Campaign[] = [
-  {
-    _id: "1",
-    name: "Relance NRP Janvier 2026",
-    type: "sms",
-    templateId: "1",
-    recipients: ["1", "2", "3", "4", "5"],
-    recipientsCount: 156,
-    sentCount: 148,
-    failedCount: 8,
-    status: "sent",
-    sentAt: new Date("2026-01-28T14:30:00"),
-    createdAt: new Date("2026-01-28T10:00:00"),
-  },
-  {
-    _id: "2",
-    name: "Email de suivi ITE",
-    type: "email",
-    templateId: "2",
-    recipients: ["1", "2", "3"],
-    recipientsCount: 89,
-    sentCount: 85,
-    failedCount: 4,
-    status: "sent",
-    sentAt: new Date("2026-01-27T09:15:00"),
-    createdAt: new Date("2026-01-27T08:00:00"),
-  },
-  {
-    _id: "3",
-    name: "Rappel RDV - Février",
-    type: "sms",
-    templateId: "3",
-    recipients: ["1", "2"],
-    recipientsCount: 45,
-    sentCount: 32,
-    failedCount: 0,
-    status: "sending",
-    createdAt: new Date("2026-01-29T10:30:00"),
-  },
-  {
-    _id: "4",
-    name: "Campagne Email Pompe à Chaleur",
-    type: "email",
-    templateId: "4",
-    recipients: ["1", "2", "3", "4"],
-    recipientsCount: 234,
-    sentCount: 220,
-    failedCount: 14,
-    status: "sent",
-    sentAt: new Date("2026-01-25T16:00:00"),
-    createdAt: new Date("2026-01-25T11:00:00"),
-  },
-  {
-    _id: "5",
-    name: "Relance NRP - Dernière chance",
-    type: "sms",
-    templateId: "1",
-    recipients: ["1"],
-    recipientsCount: 67,
-    sentCount: 0,
-    failedCount: 67,
-    status: "failed",
-    createdAt: new Date("2026-01-26T13:00:00"),
-  },
-  {
-    _id: "6",
-    name: "Promo Été 2026",
-    type: "email",
-    templateId: "2",
-    recipients: [],
-    recipientsCount: 0,
-    sentCount: 0,
-    failedCount: 0,
-    status: "draft",
-    scheduledAt: new Date("2026-06-01T09:00:00"),
-    createdAt: new Date("2026-01-20T15:00:00"),
-  },
-];
 
 export default function CampaignHistoryPage() {
   const router = useRouter();
-  const [campaigns] = useState<Campaign[]>(MOCK_CAMPAIGNS);
-  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(
-    null,
-  );
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const { showToast } = useToast();
+
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "sms" | "email">("all");
   const [statusFilter, setStatusFilter] = useState<
-    "all" | "sent" | "sending" | "failed" | "draft"
+    "all" | "sent" | "sending" | "failed"
   >("all");
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(
+    null,
+  );
 
-  const filteredCampaigns = useMemo(() => {
-    return campaigns.filter((campaign) => {
-      const matchesSearch =
-        campaign.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        campaign._id?.toLowerCase().includes(searchQuery.toLowerCase());
+  // Charger les campagnes au montage
+  useEffect(() => {
+    loadCampaigns();
 
-      const matchesType = typeFilter === "all" || campaign.type === typeFilter;
-      const matchesStatus =
-        statusFilter === "all" || campaign.status === statusFilter;
+    // Afficher toast de succès si on vient de créer une campagne
+    if (searchParams.get("success") === "true") {
+      const name = searchParams.get("name");
+      showToast(
+        "success",
+        "Campagne créée !",
+        `La campagne "${name}" a été créée avec succès`,
+      );
+    }
+  }, []);
 
-      return matchesSearch && matchesType && matchesStatus;
-    });
-  }, [campaigns, searchQuery, typeFilter, statusFilter]);
+  const loadCampaigns = async () => {
+    try {
+      setLoading(true);
+      const response = await ApiService.getCampaigns();
+
+      if (response.success) {
+        setCampaigns(response.data);
+        console.log(`✅ ${response.data.length} campagnes chargées`);
+      } else {
+        showToast("error", "Erreur", "Impossible de charger les campagnes");
+      }
+    } catch (error: any) {
+      console.error("❌ Erreur loadCampaigns:", error);
+      showToast("error", "Erreur", "Erreur lors du chargement des campagnes");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Filtrage
+  const filteredCampaigns = campaigns.filter((campaign) => {
+    const matchesType = typeFilter === "all" || campaign.type === typeFilter;
+    const matchesStatus =
+      statusFilter === "all" || campaign.status === statusFilter;
+    const matchesSearch = campaign.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    return matchesType && matchesStatus && matchesSearch;
+  });
+
+  // Stats globales
+  const stats = {
+    totalSent: campaigns.reduce((sum, c) => sum + (c.sentCount || 0), 0),
+    totalFailed: campaigns.reduce((sum, c) => sum + (c.failedCount || 0), 0),
+    totalRecipients: campaigns.reduce(
+      (sum, c) => sum + (c.recipientsCount || 0),
+      0,
+    ),
+  };
 
   const handleViewDetails = (campaign: Campaign) => {
     setSelectedCampaign(campaign);
-    setIsModalOpen(true);
   };
 
-  // Stats globales
-  const totalSent = campaigns.reduce((acc, c) => acc + c.sentCount, 0);
-  const totalFailed = campaigns.reduce((acc, c) => acc + c.failedCount, 0);
-  const totalRecipients = campaigns.reduce(
-    (acc, c) => acc + c.recipientsCount,
-    0,
-  );
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-400">Chargement des campagnes...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -135,47 +103,45 @@ export default function CampaignHistoryPage() {
       <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-end">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold mb-2">
-            Historique des Relances
+            Historique des campagnes
           </h1>
           <p className="text-slate-400 text-sm md:text-base">
-            Consultez toutes vos campagnes et leurs statistiques
+            Suivez l'état de vos campagnes de relance ({campaigns.length}{" "}
+            campagnes)
           </p>
         </div>
         <Button
           variant="primary"
           size="lg"
-          onClick={() => router.push("/campaign/new")}
-          className="w-full lg:w-auto rounded-xl"
+          onClick={() => router.push("/campaigns/new")}
+          className="w-full lg:w-auto"
         >
+          <Plus className="w-5 h-5" />
           Nouvelle Relance
         </Button>
       </div>
 
-      {/* Global Stats */}
+      {/* Stats globales */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-[#111114] border border-slate-800 rounded-xl p-6">
-          <p className="text-sm text-slate-500 mb-1">Total envoyés</p>
-          <p className="text-3xl font-bold text-success">
-            {totalSent.toLocaleString()}
-          </p>
+          <p className="text-sm text-slate-400 mb-2">Total envoyés</p>
+          <p className="text-3xl font-bold text-success">{stats.totalSent}</p>
         </div>
         <div className="bg-[#111114] border border-slate-800 rounded-xl p-6">
-          <p className="text-sm text-slate-500 mb-1">Total échecs</p>
-          <p className="text-3xl font-bold text-error">
-            {totalFailed.toLocaleString()}
-          </p>
+          <p className="text-sm text-slate-400 mb-2">Total échecs</p>
+          <p className="text-3xl font-bold text-error">{stats.totalFailed}</p>
         </div>
         <div className="bg-[#111114] border border-slate-800 rounded-xl p-6">
-          <p className="text-sm text-slate-500 mb-1">Total destinataires</p>
+          <p className="text-sm text-slate-400 mb-2">Total destinataires</p>
           <p className="text-3xl font-bold text-indigo-400">
-            {totalRecipients.toLocaleString()}
+            {stats.totalRecipients}
           </p>
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filtres */}
       <div className="bg-[#111114] border border-slate-800 rounded-2xl p-4 md:p-6">
-        <div className="flex flex-col lg:flex-row gap-4">
+        <div className="flex flex-col md:flex-row gap-4 mb-4">
           {/* Search */}
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
@@ -188,47 +154,47 @@ export default function CampaignHistoryPage() {
             />
           </div>
 
-          {/* Type Filter */}
+          {/* Type */}
           <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => setTypeFilter("all")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 typeFilter === "all"
                   ? "bg-indigo-500 text-white"
                   : "bg-slate-800 text-slate-400 hover:bg-slate-700"
               }`}
             >
-              Tous ({campaigns.length})
+              Tous
             </button>
             <button
               onClick={() => setTypeFilter("sms")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 typeFilter === "sms"
                   ? "bg-purple-500 text-white"
                   : "bg-slate-800 text-slate-400 hover:bg-slate-700"
               }`}
             >
-              SMS ({campaigns.filter((c) => c.type === "sms").length})
+              SMS
             </button>
             <button
               onClick={() => setTypeFilter("email")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 typeFilter === "email"
                   ? "bg-indigo-500 text-white"
                   : "bg-slate-800 text-slate-400 hover:bg-slate-700"
               }`}
             >
-              Email ({campaigns.filter((c) => c.type === "email").length})
+              Email
             </button>
           </div>
 
-          {/* Status Filter */}
+          {/* Status */}
           <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => setStatusFilter("all")}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 statusFilter === "all"
-                  ? "bg-slate-700 text-white"
+                  ? "bg-indigo-500 text-white"
                   : "bg-slate-800 text-slate-400 hover:bg-slate-700"
               }`}
             >
@@ -236,7 +202,7 @@ export default function CampaignHistoryPage() {
             </button>
             <button
               onClick={() => setStatusFilter("sent")}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 statusFilter === "sent"
                   ? "bg-success text-white"
                   : "bg-slate-800 text-slate-400 hover:bg-slate-700"
@@ -246,7 +212,7 @@ export default function CampaignHistoryPage() {
             </button>
             <button
               onClick={() => setStatusFilter("sending")}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 statusFilter === "sending"
                   ? "bg-warning text-white"
                   : "bg-slate-800 text-slate-400 hover:bg-slate-700"
@@ -256,7 +222,7 @@ export default function CampaignHistoryPage() {
             </button>
             <button
               onClick={() => setStatusFilter("failed")}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 statusFilter === "failed"
                   ? "bg-error text-white"
                   : "bg-slate-800 text-slate-400 hover:bg-slate-700"
@@ -266,49 +232,53 @@ export default function CampaignHistoryPage() {
             </button>
           </div>
         </div>
+
+        <p className="text-sm text-slate-500">
+          {filteredCampaigns.length} résultat
+          {filteredCampaigns.length > 1 ? "s" : ""}
+        </p>
       </div>
 
-      {/* Results Count */}
-      <div className="text-sm text-slate-400">
-        {filteredCampaigns.length} campagne
-        {filteredCampaigns.length > 1 ? "s" : ""} trouvée
-        {filteredCampaigns.length > 1 ? "s" : ""}
-      </div>
-
-      {/* Mobile: Cards */}
-      <div className="block lg:hidden space-y-4">
-        {filteredCampaigns.length === 0 ? (
-          <div className="bg-[#111114] border border-slate-800 rounded-xl p-12 text-center">
-            <p className="text-slate-400">Aucune campagne trouvée</p>
+      {/* Liste / Tableau */}
+      {filteredCampaigns.length === 0 ? (
+        <div className="bg-[#111114] border border-slate-800 rounded-2xl p-12 text-center">
+          <p className="text-slate-400">
+            {campaigns.length === 0
+              ? "Aucune campagne. Créez-en une pour commencer !"
+              : "Aucune campagne trouvée"}
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Mobile : Cards */}
+          <div className="lg:hidden space-y-4">
+            {filteredCampaigns.map((campaign) => (
+              <CampaignCard
+                key={campaign._id}
+                campaign={campaign}
+                onViewDetails={handleViewDetails}
+              />
+            ))}
           </div>
-        ) : (
-          filteredCampaigns.map((campaign) => (
-            <CampaignCard
-              key={campaign._id}
-              campaign={campaign}
+
+          {/* Desktop : Table */}
+          <div className="hidden lg:block">
+            <CampaignTable
+              campaigns={filteredCampaigns}
               onViewDetails={handleViewDetails}
             />
-          ))
-        )}
-      </div>
+          </div>
+        </>
+      )}
 
-      {/* Desktop: Table */}
-      <div className="hidden lg:block">
-        <CampaignTable
-          campaigns={filteredCampaigns}
-          onViewDetails={handleViewDetails}
+      {/* Modal détails */}
+      {selectedCampaign && (
+        <CampaignDetailsModal
+          campaign={selectedCampaign}
+          isOpen={!!selectedCampaign}
+          onClose={() => setSelectedCampaign(null)}
         />
-      </div>
-
-      {/* Details Modal */}
-      <CampaignDetailsModal
-        campaign={selectedCampaign}
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedCampaign(null);
-        }}
-      />
+      )}
     </div>
   );
 }

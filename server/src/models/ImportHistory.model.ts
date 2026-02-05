@@ -21,13 +21,13 @@ export interface IImportHistory {
   nombreLeads: number;
   nombreSucces: number;
   nombreEchecs: number;
-  nombreMisesAJour: number; // ✅ NOUVEAU : Nombre de leads mis à jour
-  nombreNouveaux: number; // ✅ NOUVEAU : Nombre de nouveaux leads
+  nombreMisesAJour: number;
+  nombreNouveaux: number;
   dateImport: Date;
   statut: "en_cours" | "termine" | "echec";
   erreurs?: string[];
-  changes?: IDetectedChange[]; // ✅ NOUVEAU : Liste des changements détectés
-  processingTime?: number; // ✅ NOUVEAU : Temps de traitement en secondes
+  changes?: IDetectedChange[];
+  processingTime?: number;
   utilisateur?: string;
 }
 

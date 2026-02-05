@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/src/components/ui/Button";
 import { ConfirmModal } from "@/src/components/ui/ConfirmModal";
 import { useToast } from "@/src/components/contexts/ToastContext";
-import { ApiService } from "@/src/lib/api"; // ✅ AJOUTÉ
+import { ApiService } from "@/src/lib/api";
 import { WizardProgress } from "./WizardProgress";
 import { WizardStep1 } from "./WizardStep1";
 import { WizardStep2 } from "./WizardStep2";
