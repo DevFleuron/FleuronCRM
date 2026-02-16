@@ -12,6 +12,11 @@ interface LeadTableProps {
   selectedIds: string[];
   onToggleSelect: (id: string) => void;
   onToggleSelectAll: () => void;
+  onSendSMS: (lead: Lead) => void;
+  onSendEmail: (lead: Lead) => void;
+  onViewDetails: (lead: Lead) => void;
+  onBulkSMS: () => void;
+  onBulkEmail: () => void;
   onEdit: (lead: Lead) => void;
   currentFilters?: any;
 }
@@ -21,6 +26,11 @@ export function LeadTable({
   selectedIds,
   onToggleSelect,
   onToggleSelectAll,
+  onSendSMS,
+  onSendEmail,
+  onViewDetails,
+  onBulkSMS,
+  onBulkEmail,
   onEdit,
   currentFilters,
 }: LeadTableProps) {
