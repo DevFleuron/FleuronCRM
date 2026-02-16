@@ -9,11 +9,21 @@ import { ApiService } from "@/src/lib/api";
 
 interface LeadTableProps {
   leads: Lead[];
+  selectedIds: string[];
+  onToggleSelect: (id: string) => void;
+  onToggleSelectAll: () => void;
   onEdit: (lead: Lead) => void;
   currentFilters?: any;
 }
 
-export function LeadTable({ leads, onEdit, currentFilters }: LeadTableProps) {
+export function LeadTable({
+  leads,
+  selectedIds,
+  onToggleSelect,
+  onToggleSelectAll,
+  onEdit,
+  currentFilters,
+}: LeadTableProps) {
   const { showToast } = useToast();
   const [showExportModal, setShowExportModal] = useState(false);
   const [showObservationModal, setShowObservationModal] = useState(false);

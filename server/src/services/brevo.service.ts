@@ -99,7 +99,7 @@ export class BrevoService {
     }
   }
 
-  /**
+  /*
    * Remplacer les variables dans le template
    */
   static replaceVariables(content: string, lead: any): string {

@@ -50,11 +50,14 @@ const navigation = [
 ];
 
 interface SidebarProps {
-  isMobileMenuOpen: boolean;
-  onClose: () => void;
+  isMobileMenuOpen?: boolean;
+  onClose?: () => void;
 }
 
-export function Sidebar({ isMobileMenuOpen, onClose }: SidebarProps) {
+export function Sidebar({
+  isMobileMenuOpen = false,
+  onClose = () => {},
+}: SidebarProps) {
   const [isOpen, setIsOpen] = useState(true);
   const pathname = usePathname();
   const router = useRouter();

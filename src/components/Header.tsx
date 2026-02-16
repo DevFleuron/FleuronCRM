@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Search, X, Menu } from "lucide-react";
 
 interface HeaderProps {
-  onMenuClick: () => void;
+  onMenuClick?: () => void;
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
