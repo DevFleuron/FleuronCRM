@@ -17,7 +17,7 @@ interface LeadTableProps {
   onViewDetails: (lead: Lead) => void;
   onBulkSMS: () => void;
   onBulkEmail: () => void;
-  onEdit: (lead: Lead) => void;
+  onEdit?: (lead: Lead) => void;
   currentFilters?: any;
 }
 
