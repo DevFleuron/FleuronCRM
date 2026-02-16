@@ -10,8 +10,9 @@ import { CampaignDetailsModal } from "@/src/components/features/campaigns/Campai
 import { useToast } from "@/src/components/contexts/ToastContext";
 import { ApiService } from "@/src/lib/api";
 import type { Campaign } from "@/src/types";
+import { Suspense } from "react";
 
-export default function CampaignHistoryPage() {
+function CampaignHistoryContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
@@ -279,5 +280,22 @@ export default function CampaignHistoryPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function CampaignHistoryPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-100">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-slate-400">Chargement...</p>
+          </div>
+        </div>
+      }
+    >
+      <CampaignHistoryContent />
+    </Suspense>
   );
 }
