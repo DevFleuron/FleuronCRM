@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"next dev -p 3000\" \"npm run server:dev\"",
-    "build": "next build && npm run server:build",
+    "build": "next build",
     "start": "next start -p 3000",
     "lint": "next lint",
     "server:dev": "cross-env PORT=5000 NODE_ENV=development nodemon --cwd server --exec tsx src/server.ts",
