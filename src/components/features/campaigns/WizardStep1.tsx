@@ -3,8 +3,8 @@
 import React, { useState, useMemo } from "react";
 import { Users } from "lucide-react";
 import { LeadFiltersBar } from "@/src/components/features/leads/LeadFilters";
-import { LeadTable } from "@/src/components/features/leads/LeadTable";
 import type { Lead, LeadFilters } from "@/src/types";
+import { SelectableLeadTable } from "../leads/SelectableLeadTable";
 
 interface WizardStep1Props {
   leads: Lead[];
@@ -75,7 +75,7 @@ export function WizardStep1({
       {/* Info Card */}
       <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4">
         <div className="flex items-center gap-3">
-          <Users className="w-5 h-5 text-indigo-400 flex-shrink-0" />
+          <Users className="w-5 h-5 text-indigo-400 shrink-0" />
           <div>
             <p className="text-sm font-semibold text-indigo-400">
               {selectedIds.length} destinataire
@@ -99,16 +99,11 @@ export function WizardStep1({
       />
 
       {/* Table */}
-      <LeadTable
+      <SelectableLeadTable
         leads={filteredLeads}
         selectedIds={selectedIds}
         onToggleSelect={handleToggleSelect}
         onToggleSelectAll={handleToggleSelectAll}
-        onSendSMS={() => {}}
-        onSendEmail={() => {}}
-        onViewDetails={() => {}}
-        onBulkSMS={() => {}}
-        onBulkEmail={() => {}}
       />
     </div>
   );

@@ -69,7 +69,7 @@ export const getLeads = async (req: Request, res: Response): Promise<void> => {
       },
     });
   } catch (error: any) {
-    console.error("❌ Erreur getLeads:", error);
+    console.error("Erreur getLeads:", error);
     res.status(500).json({
       success: false,
       message: "Erreur lors de la récupération des leads",
@@ -78,9 +78,9 @@ export const getLeads = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-/**
- * GET /api/leads/:id
- * Récupérer un lead par ID
+/*
+ GET /api/leads/:id
+ Récupérer un lead par ID
  */
 export const getLeadById = async (
   req: Request,
@@ -104,7 +104,7 @@ export const getLeadById = async (
       data: lead,
     });
   } catch (error: any) {
-    console.error("❌ Erreur getLeadById:", error);
+    console.error("Erreur getLeadById:", error);
     res.status(500).json({
       success: false,
       message: "Erreur lors de la récupération du lead",
@@ -114,8 +114,8 @@ export const getLeadById = async (
 };
 
 /**
- * PATCH /api/leads/:id
- * Mettre à jour un lead
+ PATCH /api/leads/:id
+ Mettre à jour un lead
  */
 export const updateLead = async (
   req: Request,
@@ -160,7 +160,7 @@ export const updateLead = async (
       data: lead,
     });
   } catch (error: any) {
-    console.error("❌ Erreur updateLead:", error);
+    console.error("Erreur updateLead:", error);
     res.status(500).json({
       success: false,
       message: "Erreur lors de la mise à jour du lead",

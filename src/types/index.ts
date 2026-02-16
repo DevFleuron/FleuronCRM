@@ -85,7 +85,9 @@ export interface Template {
   variables: string[]; // ['nom', 'prenom', 'ref']
   createdAt?: Date;
   updatedAt?: Date;
-  usageCount?: number; // Nombre de fois utilisé
+  usageCount?: number;
+  ctaText?: string;
+  ctaUrl?: string;
 }
 
 export interface TemplateFormData {
@@ -93,6 +95,8 @@ export interface TemplateFormData {
   type: "sms" | "email";
   subject?: string;
   content: string;
+  ctaText?: string;
+  ctaUrl?: string;
 }
 
 export interface Campaign {
@@ -125,4 +129,45 @@ export interface WizardStep {
   title: string;
   description: string;
   isComplete: boolean;
+}
+
+export interface SequenceStep {
+  stepNumber: number;
+  type: "sms" | "email";
+  templateId: string;
+  delayDays: number;
+}
+
+export interface SequenceRecipient {
+  leadId: string;
+  leadRef: string;
+  status: "pending" | "in_progress" | "completed" | "stopped";
+  currentStep: number;
+  nextActionAt?: Date;
+  stepsCompleted: Array<{
+    stepNumber: number;
+    completedAt: Date;
+    success: boolean;
+    error?: string;
+  }>;
+  enrolledAt: Date;
+  completedAt?: Date;
+  stoppedAt?: Date;
+  stopReason?: string;
+}
+
+export interface SequenceCampaign {
+  _id?: string;
+  name: string;
+  steps: SequenceStep[];
+  recipients: SequenceRecipient[];
+  recipientsCount: number;
+  activeCount: number;
+  completedCount: number;
+  stoppedCount: number;
+  status: "draft" | "active" | "completed";
+  startedAt?: Date;
+  completedAt?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

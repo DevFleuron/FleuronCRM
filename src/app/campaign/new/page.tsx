@@ -29,15 +29,15 @@ export default function NewCampaignPage() {
 
       if (leadsResponse.success) {
         setLeads(leadsResponse.data);
-        console.log(`✅ ${leadsResponse.data.length} leads NRP chargés`);
+        console.log(`${leadsResponse.data.length} leads NRP chargés`);
       }
 
       if (templatesResponse.success) {
         setTemplates(templatesResponse.data);
-        console.log(`✅ ${templatesResponse.data.length} templates chargés`);
+        console.log(` ${templatesResponse.data.length} templates chargés`);
       }
     } catch (error: any) {
-      console.error("❌ Erreur loadData:", error);
+      console.error("Erreur loadData:", error);
       showToast("error", "Erreur", "Impossible de charger les données");
     } finally {
       setLoading(false);

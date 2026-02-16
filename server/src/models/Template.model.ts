@@ -1,17 +1,19 @@
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
-export interface ITemplate {
+export interface ITemplate extends Document {
   name: string;
   type: "sms" | "email";
-  subject?: string; // Pour les emails uniquement
+  subject?: string;
   content: string;
-  variables: string[]; // ['nom', 'prenom', 'ref']
+  variables: string[];
   usageCount: number;
+  ctaText?: string;
+  ctaUrl?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-export interface ITemplateDocument extends ITemplate, Document {}
-
-const TemplateSchema: Schema = new Schema<ITemplateDocument>(
+const TemplateSchema = new Schema<ITemplate>(
   {
     name: {
       type: String,
@@ -39,13 +41,18 @@ const TemplateSchema: Schema = new Schema<ITemplateDocument>(
       type: Number,
       default: 0,
     },
+    ctaText: {
+      type: String,
+      trim: true,
+    },
+    ctaUrl: {
+      type: String,
+      trim: true,
+    },
   },
   {
     timestamps: true,
   },
 );
 
-// Index
-TemplateSchema.index({ type: 1, createdAt: -1 });
-
-export default mongoose.model<ITemplateDocument>("Template", TemplateSchema);
+export default mongoose.model<ITemplate>("Template", TemplateSchema);

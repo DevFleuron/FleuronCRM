@@ -2,9 +2,10 @@ import { Request, Response } from "express";
 import Lead from "../models/Lead.model";
 
 /**
- * POST /api/webhooks/brevo
- * Recevoir les événements de Brevo
+ POST /api/webhooks/brevo
+ Recevoir les événements de Brevo
  */
+
 export const handleBrevoWebhook = async (
   req: Request,
   res: Response,
@@ -33,7 +34,7 @@ export const handleBrevoWebhook = async (
           $inc: { "brevoStats.emailOpened": 1 },
           $set: {
             "brevoStats.lastEmailOpenedAt": new Date(),
-            emailEnvoye: true, // Pour compatibilité
+            emailEnvoye: true,
           },
         },
       );
@@ -69,7 +70,7 @@ export const handleBrevoWebhook = async (
           $inc: { "brevoStats.smsDelivered": 1 },
           $set: {
             "brevoStats.lastSmsSentAt": new Date(),
-            smsEnvoye: true, // Pour compatibilité
+            smsEnvoye: true,
           },
         },
       );
@@ -77,7 +78,7 @@ export const handleBrevoWebhook = async (
 
     res.status(200).json({ success: true });
   } catch (error: any) {
-    console.error("❌ Erreur handleBrevoWebhook:", error);
+    console.error("Erreur handleBrevoWebhook:", error);
     res.status(500).json({
       success: false,
       error: error.message,
@@ -85,18 +86,15 @@ export const handleBrevoWebhook = async (
   }
 };
 
-/**
- * Formater un numéro de téléphone
+/*
+  Formater un numéro de téléphone
  */
 function formatPhoneNumber(phone: string): string {
-  // Supprimer tous les espaces et caractères spéciaux
   let cleaned = phone.replace(/\D/g, "");
 
-  // Si commence par +33, remplacer par 0
   if (cleaned.startsWith("33")) {
     cleaned = "0" + cleaned.substring(2);
   }
 
-  // Ajouter des espaces (ex: 06 12 34 56 78)
   return cleaned.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
 }

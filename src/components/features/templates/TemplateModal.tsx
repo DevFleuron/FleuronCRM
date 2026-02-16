@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Plus, Eye } from "lucide-react";
+import { X, Plus, Eye, ExternalLink } from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
 import { Input } from "@/src/components/ui/Input";
 import { Select } from "@/src/components/ui/Select";
@@ -28,6 +28,8 @@ export function TemplateModal({
     type: "sms",
     subject: "",
     content: "",
+    ctaText: "",
+    ctaUrl: "",
   });
 
   const [showPreview, setShowPreview] = useState(false);
@@ -39,6 +41,8 @@ export function TemplateModal({
         type: template.type,
         subject: template.subject || "",
         content: template.content,
+        ctaText: template.ctaText || "",
+        ctaUrl: template.ctaUrl || "",
       });
     } else {
       setFormData({
@@ -46,15 +50,17 @@ export function TemplateModal({
         type: "sms",
         subject: "",
         content: "",
+        ctaText: "",
+        ctaUrl: "",
       });
     }
-    setShowPreview(false); // Reset preview
+    setShowPreview(false);
   }, [template, isOpen]);
 
   if (!isOpen) return null;
 
   const handleSave = () => {
-    console.log("🔍 handleSave appelé avec:", formData); // ← DEBUG
+    console.log("handleSave appelé avec:", formData);
 
     // Validation
     if (!formData.name || !formData.content) {
@@ -75,7 +81,20 @@ export function TemplateModal({
       return;
     }
 
-    console.log("✅ Validation OK, appel onSave"); // ← DEBUG
+    //  Validation CTA : Si un champ CTA est rempli, l'autre doit l'être aussi
+    if (
+      (formData.ctaText && !formData.ctaUrl) ||
+      (!formData.ctaText && formData.ctaUrl)
+    ) {
+      showToast(
+        "error",
+        "CTA incomplet",
+        "Veuillez remplir le texte ET le lien du bouton, ou laisser les deux vides",
+      );
+      return;
+    }
+
+    console.log("Validation OK, appel onSave");
     onSave(formData);
   };
 
@@ -252,6 +271,58 @@ export function TemplateModal({
               </div>
             )}
           </div>
+
+          {/*  CTA (Email only) */}
+          {formData.type === "email" && (
+            <div className="border border-slate-700 rounded-lg p-4 bg-slate-900/50">
+              <div className="flex items-center gap-2 mb-4">
+                <ExternalLink className="w-4 h-4 text-indigo-400" />
+                <label className="text-sm font-bold text-slate-300">
+                  Bouton d'action (optionnel)
+                </label>
+              </div>
+              <p className="text-xs text-slate-500 mb-4">
+                Ajoutez un bouton cliquable pour inciter à l'action (prendre
+                RDV, demander un devis, etc.)
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Texte du bouton"
+                  value={formData.ctaText || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, ctaText: e.target.value })
+                  }
+                  placeholder="Ex: Prendre rendez-vous"
+                />
+                <Input
+                  label="Lien du bouton"
+                  value={formData.ctaUrl || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, ctaUrl: e.target.value })
+                  }
+                  placeholder="https://calendly.com/..."
+                />
+              </div>
+
+              {formData.ctaText && formData.ctaUrl && (
+                <div className="mt-4 p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
+                  <p className="text-xs text-indigo-300 mb-2">
+                    Aperçu du bouton :
+                  </p>
+
+                  <a
+                    href={formData.ctaUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity"
+                  >
+                    {formData.ctaText}
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Footer */}

@@ -2,6 +2,25 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export class ApiService {
   /**
+   * Helper pour gérer les réponses API
+   */
+  private static async handleResponse(response: Response) {
+    const contentType = response.headers.get("content-type");
+
+    if (!contentType?.includes("application/json")) {
+      throw new Error("Le serveur a retourné du HTML au lieu de JSON");
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Erreur API");
+    }
+
+    return data;
+  }
+
+  /**
    * LEADS
    */
   static async getLeads(filters?: any) {
@@ -105,5 +124,115 @@ export class ApiService {
   static async getImportById(id: string) {
     const response = await fetch(`${API_URL}/api/history/${id}`);
     return response.json();
+  }
+
+  /**
+   * STATS / DASHBOARD
+   */
+  static async getDashboardStats() {
+    const response = await fetch(`${API_URL}/api/stats/dashboard`);
+    return response.json();
+  }
+
+  /**
+   * SEQUENCES
+   */
+  static async getSequences() {
+    const response = await fetch(`${API_URL}/api/sequences`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return await this.handleResponse(response);
+  }
+
+  static async createSequence(data: {
+    name: string;
+    steps: Array<{
+      type: "sms" | "email";
+      templateId: string;
+      delayDays: number;
+    }>;
+    leadIds: string[];
+  }) {
+    const response = await fetch(`${API_URL}/api/sequences`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    return await this.handleResponse(response);
+  }
+
+  static async getSequenceById(id: string) {
+    const response = await fetch(`${API_URL}/api/sequences/${id}`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return await this.handleResponse(response);
+  }
+
+  static async stopSequence(id: string) {
+    const response = await fetch(`${API_URL}/api/sequences/${id}/stop`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return await this.handleResponse(response);
+  }
+  /**
+   * EXPORT
+   */
+  static async exportLeadsCSV(filters?: any) {
+    const response = await fetch(`${API_URL}/api/export/csv`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ filters }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Erreur lors de l'export");
+    }
+
+    // Télécharger le fichier
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `leads-${Date.now()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  }
+
+  static async exportLeadsExcel(filters?: any) {
+    const response = await fetch(`${API_URL}/api/export/excel`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ filters }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Erreur lors de l'export");
+    }
+
+    // Télécharger le fichier
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `leads-${Date.now()}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   }
 }

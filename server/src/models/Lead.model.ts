@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 /*
- * INTERFACE pour l'historique des changements de statut
+  INTERFACE pour l'historique des changements de statut
  */
 
 export interface IStatusHistory {
@@ -13,7 +13,7 @@ export interface IStatusHistory {
 }
 
 /*
- * INTERFACE pour les stats Brevo
+  INTERFACE pour les stats Brevo
  */
 
 export interface IBrevoStats {
@@ -33,11 +33,11 @@ export interface IBrevoStats {
 }
 
 /*
- * INTERFACE TypeScript pour un Lead
+  INTERFACE TypeScript pour un Lead
  */
 
 export interface ILead {
-  ref: string; // Référence unique du lead
+  ref: string;
   date: Date;
   heure: string;
   nom: string;
@@ -52,6 +52,11 @@ export interface ILead {
   rapport:
     | "NOUVEAU PROSPECT"
     | "NRP"
+    | "NRP 1"
+    | "NRP 2"
+    | "NRP 3"
+    | "NRP 4"
+    | "NRP 5"
     | "CLIENT"
     | "PERDU"
     | "RDV PRIS"
@@ -60,13 +65,13 @@ export interface ILead {
   observation?: string;
   typeInstallation?: string;
 
-  // Gestion des SMS (DEPRECATED - gardé pour compatibilité)
+  // Gestion des SMS
 
   smsEnvoye: boolean;
   smsSentAt?: Date;
   smsCount: number;
 
-  // Gestion des emails (DEPRECATED - gardé pour compatibilité)
+  // Gestion des emails
   emailEnvoye: boolean;
   emailSentAt?: Date;
   emailCount: number;
@@ -164,6 +169,7 @@ const LeadSchema: Schema = new Schema<ILeadDocument>(
         "RDV PRIS",
         "A RAPPELER",
         "DEVIS ENVOYE",
+        "DOUBLON",
       ],
       required: true,
       default: "NRP",
@@ -179,7 +185,7 @@ const LeadSchema: Schema = new Schema<ILeadDocument>(
       trim: true,
     },
 
-    // Gestion des SMS (DEPRECATED - gardé pour compatibilité)
+    // Gestion des SMS
 
     smsEnvoye: {
       type: Boolean,
@@ -193,7 +199,7 @@ const LeadSchema: Schema = new Schema<ILeadDocument>(
       default: 0,
     },
 
-    // Gestion des emails (DEPRECATED - gardé pour compatibilité)
+    // Gestion des emails
 
     emailEnvoye: {
       type: Boolean,
@@ -280,7 +286,6 @@ const LeadSchema: Schema = new Schema<ILeadDocument>(
 // Index
 
 LeadSchema.index({ rapport: 1, date: -1 });
-LeadSchema.index({ ref: 1 });
 LeadSchema.index({ email: 1 });
 LeadSchema.index({ mobile: 1 });
 LeadSchema.index({ source: 1 });

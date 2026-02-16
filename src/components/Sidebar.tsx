@@ -9,6 +9,7 @@ import {
   Users,
   Settings,
   ChevronLeft,
+  Zap,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/src/lib/utils";
@@ -28,12 +29,24 @@ const navigation = [
   },
   { id: "templates", name: "Modèles NRP", icon: FileText, href: "/templates" },
   {
-    id: "history",
+    id: "campaign-history",
     name: "Historique Relances",
     icon: History,
     href: "/campaign/history",
   },
-  { id: "leads", name: "Leads NRP", icon: Users, href: "/leads" },
+  { id: "leads", name: "Leads", icon: Users, href: "/leads" },
+  {
+    id: "sequences",
+    name: "Séquences",
+    href: "/sequences",
+    icon: Zap,
+  },
+  {
+    id: "import-history",
+    name: "Historique Imports",
+    href: "/history",
+    icon: History,
+  },
 ];
 
 interface SidebarProps {

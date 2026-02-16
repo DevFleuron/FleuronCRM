@@ -142,7 +142,7 @@ export function CampaignWizard({ leads, templates }: CampaignWizardProps) {
     setIsConfirmOpen(true);
   };
 
-  // ✅ Envoi après confirmation
+  // Envoi après confirmation
   const handleConfirmSend = async () => {
     setIsSubmitting(true);
 
@@ -155,11 +155,11 @@ export function CampaignWizard({ leads, templates }: CampaignWizardProps) {
         scheduledAt: scheduledAt ? scheduledAt.toISOString() : undefined,
       };
 
-      console.log("📤 Création campagne:", campaignData);
+      console.log("Création campagne:", campaignData);
 
       const response = await ApiService.createCampaign(campaignData);
 
-      console.log("📦 Réponse:", response);
+      console.log("Réponse:", response);
 
       if (response.success) {
         showToast(
@@ -173,7 +173,7 @@ export function CampaignWizard({ leads, templates }: CampaignWizardProps) {
         // Attendre 1.5s pour voir le toast
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        router.push("/campaigns/history");
+        router.push("/campaign/history");
       } else {
         showToast(
           "error",
@@ -184,7 +184,7 @@ export function CampaignWizard({ leads, templates }: CampaignWizardProps) {
         setIsConfirmOpen(false);
       }
     } catch (error: any) {
-      console.error("❌ Erreur création campagne:", error);
+      console.error("Erreur création campagne:", error);
       showToast(
         "error",
         "Erreur",
@@ -193,7 +193,7 @@ export function CampaignWizard({ leads, templates }: CampaignWizardProps) {
       setIsSubmitting(false);
       setIsConfirmOpen(false);
     }
-  }; // ✅ ACCOLADE FERMANTE AJOUTÉE
+  }; // ACCOLADE FERMANTE AJOUTÉE
 
   return (
     <div className="space-y-8">
@@ -203,7 +203,7 @@ export function CampaignWizard({ leads, templates }: CampaignWizardProps) {
       </div>
 
       {/* Content */}
-      <div className="min-h-[500px]">
+      <div className="min-h-125">
         {currentStep === 1 && (
           <WizardStep1
             leads={leads}

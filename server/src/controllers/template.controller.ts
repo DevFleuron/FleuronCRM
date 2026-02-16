@@ -2,8 +2,8 @@ import { Request, Response } from "express";
 import Template from "../models/Template.model";
 
 /**
- * GET /api/templates
- * Récupérer tous les templates
+ GET /api/templates
+ Récupérer tous les templates
  */
 export const getTemplates = async (
   req: Request,
@@ -22,7 +22,7 @@ export const getTemplates = async (
       data: templates,
     });
   } catch (error: any) {
-    console.error("❌ Erreur getTemplates:", error);
+    console.error("Erreur getTemplates:", error);
     res.status(500).json({
       success: false,
       message: "Erreur lors de la récupération des templates",
@@ -32,8 +32,8 @@ export const getTemplates = async (
 };
 
 /**
- * POST /api/templates
- * Créer un nouveau template
+ POST /api/templates
+ Créer un nouveau template
  */
 export const createTemplate = async (
   req: Request,
@@ -72,7 +72,7 @@ export const createTemplate = async (
       data: template,
     });
   } catch (error: any) {
-    console.error("❌ Erreur createTemplate:", error);
+    console.error("Erreur createTemplate:", error);
     res.status(500).json({
       success: false,
       message: "Erreur lors de la création du template",
@@ -82,8 +82,8 @@ export const createTemplate = async (
 };
 
 /**
- * PUT /api/templates/:id
- * Mettre à jour un template
+ PUT /api/templates/:id
+ Mettre à jour un template
  */
 export const updateTemplate = async (
   req: Request,
@@ -125,7 +125,7 @@ export const updateTemplate = async (
       data: template,
     });
   } catch (error: any) {
-    console.error("❌ Erreur updateTemplate:", error);
+    console.error("Erreur updateTemplate:", error);
     res.status(500).json({
       success: false,
       message: "Erreur lors de la mise à jour du template",
@@ -135,8 +135,8 @@ export const updateTemplate = async (
 };
 
 /**
- * DELETE /api/templates/:id
- * Supprimer un template
+ DELETE /api/templates/:id
+ Supprimer un template
  */
 export const deleteTemplate = async (
   req: Request,
@@ -160,7 +160,7 @@ export const deleteTemplate = async (
       message: "Template supprimé avec succès",
     });
   } catch (error: any) {
-    console.error("❌ Erreur deleteTemplate:", error);
+    console.error("Erreur deleteTemplate:", error);
     res.status(500).json({
       success: false,
       message: "Erreur lors de la suppression du template",

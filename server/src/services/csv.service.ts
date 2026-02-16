@@ -3,18 +3,20 @@ import csv from "csv-parser";
 import Lead from "../models/Lead.model";
 import ImportHistory from "../models/ImportHistory.model";
 import Campaign from "../models/Campaign.model";
+import { SequenceService } from "./sequence.service";
+import { isLeavingNRP } from "../utils/lead.utils";
 import mongoose from "mongoose";
 
 export class CSVService {
-  /**
-   * Normaliser les headers (insensible à la casse, enlever espaces)
+  /*
+    Normaliser les headers 
    */
   private static normalizeHeader(header: string): string {
     return header.toLowerCase().trim().replace(/\s+/g, "");
   }
 
-  /**
-   * Mapper les headers du CSV vers les champs attendus
+  /*
+   Mapper les headers du CSV vers les champs attendus
    */
   private static mapHeaders(headers: string[]): Map<string, string> {
     const mapping = new Map<string, string>();
@@ -55,8 +57,8 @@ export class CSVService {
     return mapping;
   }
 
-  /**
-   * Extraire les données d'une ligne CSV
+  /*
+  Extraire les données d'une ligne CSV
    */
   private static extractRowData(
     row: any,
@@ -71,9 +73,9 @@ export class CSVService {
     return data;
   }
 
-  /**
-   * Valider la structure du CSV
-   */
+  /*
+   Valider la structure du CSV
+*/
   static async validateCSV(
     filePath: string,
   ): Promise<{ valid: boolean; message: string }> {
@@ -130,8 +132,8 @@ export class CSVService {
     });
   }
 
-  /**
-   * Importer le CSV avec UPSERT
+  /*
+   Importer le CSV avec UPSERT
    */
   static async importCSV(filePath: string, nomFichier: string) {
     const startTime = Date.now();
@@ -167,7 +169,7 @@ export class CSVService {
           // Créer le mapping au premier passage
           headerMapping = this.mapHeaders(headers);
           console.log(
-            "📋 Mapping des colonnes:",
+            "Mapping des colonnes:",
             Object.fromEntries(headerMapping),
           );
         })
@@ -220,7 +222,7 @@ export class CSVService {
 
             if (missingFields.length > 0) {
               const errorMsg = `Ligne ${stats.total}: Champs manquants (${missingFields.join(", ")})`;
-              console.log(`❌ ${errorMsg}`);
+              console.log(`${errorMsg}`);
               console.log(`   Données reçues:`, {
                 ref: mappedData.ref,
                 nom: mappedData.nom,
@@ -232,11 +234,13 @@ export class CSVService {
               stats.echecs++;
               return;
             }
-            // ✅ UPSERT : Chercher par ref
+            //UPSERT : Chercher par ref
             const existingLead = await Lead.findOne({ ref: leadData.ref });
 
             if (existingLead) {
-              // ✅ LEAD EXISTE → UPDATE
+              //LEAD EXISTE → UPDATE
+              const oldStatus = existingLead.rapport;
+
               const hasChanged = await this.updateLeadAndDetectChanges(
                 existingLead,
                 leadData,
@@ -246,9 +250,26 @@ export class CSVService {
 
               if (hasChanged) {
                 stats.misesAJour++;
+
+                // Vérifier si le statut a changé
+                const statusChanged = oldStatus !== leadData.rapport;
+
+                if (statusChanged) {
+                  console.log(
+                    `Statut changé: ${oldStatus} → ${leadData.rapport}`,
+                  );
+
+                  // Arrêter les séquences si le lead n'est plus NRP
+                  if (leadData.rapport !== "NRP") {
+                    await SequenceService.checkAndStopSequences(
+                      existingLead._id.toString(),
+                      leadData.rapport,
+                    );
+                  }
+                }
               }
             } else {
-              // ✅ NOUVEAU LEAD → INSERT
+              //NOUVEAU LEAD → INSERT
               await Lead.create({
                 ...leadData,
                 importedAt: new Date(),
@@ -312,7 +333,7 @@ export class CSVService {
     });
   }
 
-  /**
+  /*
    * Détecter les changements et mettre à jour le lead
    */
   private static async updateLeadAndDetectChanges(
@@ -335,17 +356,17 @@ export class CSVService {
       if (existingLead[field] !== newData[field]) {
         hasChanged = true;
 
-        // ⚠️ CHANGEMENT DE STATUT CRITIQUE
+        // CHANGEMENT DE STATUT CRITIQUE
         if (field === "rapport") {
           const oldStatus = existingLead.rapport;
           const newStatus = newData.rapport;
 
           console.log(
-            `📊 Changement statut Lead ${existingLead.ref}: ${oldStatus} → ${newStatus}`,
+            `Changement statut Lead ${existingLead.ref}: ${oldStatus} → ${newStatus}`,
           );
 
           // Si le lead sort du statut NRP → Retirer des campagnes
-          if (oldStatus === "NRP" && newStatus !== "NRP") {
+          if (isLeavingNRP(oldStatus, newStatus)) {
             await this.removeLeadFromActiveCampaigns(
               existingLead._id,
               importId,
@@ -364,7 +385,7 @@ export class CSVService {
             });
 
             console.log(
-              `✅ Lead ${existingLead.ref} retiré des campagnes actives`,
+              `Lead ${existingLead.ref} retiré des campagnes actives`,
             );
           } else {
             changes.push({
@@ -401,8 +422,8 @@ export class CSVService {
     return hasChanged;
   }
 
-  /**
-   * Retirer un lead de toutes les campagnes actives
+  /*
+  Retirer un lead de toutes les campagnes actives
    */
   private static async removeLeadFromActiveCampaigns(
     leadId: mongoose.Types.ObjectId,
@@ -417,7 +438,7 @@ export class CSVService {
     });
 
     console.log(
-      `🔍 ${campaigns.length} campagne(s) trouvée(s) pour le lead ${leadId}`,
+      `${campaigns.length} campagne(s) trouvée(s) pour le lead ${leadId}`,
     );
 
     for (const campaign of campaigns) {
@@ -438,8 +459,6 @@ export class CSVService {
 
         campaign.removedCount = (campaign.removedCount || 0) + 1;
         await campaign.save();
-
-        console.log(`✅ Lead retiré de la campagne: ${campaign.name}`);
       }
     }
   }

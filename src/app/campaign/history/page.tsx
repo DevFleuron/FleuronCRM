@@ -49,12 +49,12 @@ export default function CampaignHistoryPage() {
 
       if (response.success) {
         setCampaigns(response.data);
-        console.log(`✅ ${response.data.length} campagnes chargées`);
+        console.log(`${response.data.length} campagnes chargées`);
       } else {
         showToast("error", "Erreur", "Impossible de charger les campagnes");
       }
     } catch (error: any) {
-      console.error("❌ Erreur loadCampaigns:", error);
+      console.error("Erreur loadCampaigns:", error);
       showToast("error", "Erreur", "Erreur lors du chargement des campagnes");
     } finally {
       setLoading(false);
@@ -113,10 +113,9 @@ export default function CampaignHistoryPage() {
         <Button
           variant="primary"
           size="lg"
-          onClick={() => router.push("/campaigns/new")}
+          onClick={() => router.push("/campaign/new")}
           className="w-full lg:w-auto"
         >
-          <Plus className="w-5 h-5" />
           Nouvelle Relance
         </Button>
       </div>

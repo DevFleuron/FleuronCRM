@@ -34,7 +34,7 @@ export default function LeadsPage() {
         showToast("error", "Erreur", "Impossible de charger les leads");
       }
     } catch (error) {
-      console.error("❌ Erreur loadLeads:", error);
+      console.error("Erreur loadLeads:", error);
       showToast("error", "Erreur", "Erreur lors du chargement des leads");
     } finally {
       setLoading(false);
@@ -98,10 +98,10 @@ export default function LeadsPage() {
   //  Import CSV connecté à l'API
   const handleImport = async (file: File) => {
     try {
-      console.log("📤 Import en cours:", file.name);
+      console.log("Import en cours:", file.name);
       const response = await ApiService.importCSV(file);
 
-      console.log("📦 Réponse complète:", JSON.stringify(response, null, 2));
+      console.log("Réponse complète:", JSON.stringify(response, null, 2));
 
       if (response.success) {
         //  Utiliser directement le message du backend
@@ -112,13 +112,13 @@ export default function LeadsPage() {
         );
 
         //  Recharger les leads
-        console.log("🔄 Rechargement des leads...");
+        console.log("Rechargement des leads...");
         await loadLeads();
       } else {
         showToast("error", "Erreur d'import", response.message);
       }
     } catch (error: any) {
-      console.error("❌ Erreur import:", error);
+      console.error("Erreur import:", error);
       showToast("error", "Erreur", error.message || "Erreur lors de l'import");
     }
   };
