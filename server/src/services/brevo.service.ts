@@ -116,6 +116,7 @@ export class BrevoService {
       .replace(/{{email}}/g, lead.email || "")
       .replace(/{{mobile}}/g, lead.mobile || "")
       .replace(/{{ref}}/g, lead.ref || "")
+      .replace(/{{typeInstallation}}/g, lead.typeInstallation || "")
       .replace(/{{adresse}}/g, lead.adresse || "")
       .replace(/{{codePostal}}/g, lead.codePostal || "")
       .replace(/{{source}}/g, lead.source || "")

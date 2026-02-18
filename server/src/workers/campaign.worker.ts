@@ -86,7 +86,6 @@ export async function processCampaignSending(campaignId: string) {
 
         // Envoyer
         let result;
-        let subject = template.subject || "";
         if (campaign.type === "sms") {
           result = await BrevoService.sendSMS(lead.mobile, content);
         } else {
@@ -94,13 +93,18 @@ export async function processCampaignSending(campaignId: string) {
             template.subject || "",
             lead,
           );
+
+          // Ajouter le CTA si présent
+          if (template.ctaText && template.ctaUrl) {
+            content = addCallToAction(
+              content,
+              template.ctaText,
+              template.ctaUrl,
+            );
+          }
+
           result = await BrevoService.sendEmail(lead.email, subject, content);
         }
-        if (campaign.type === "email" && template.ctaText && template.ctaUrl) {
-          content = addCallToAction(content, template.ctaText, template.ctaUrl);
-        }
-
-        result = await BrevoService.sendEmail(lead.email, subject, content);
 
         if (result.success) {
           recipient.status = "sent";

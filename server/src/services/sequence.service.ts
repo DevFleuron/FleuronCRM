@@ -139,9 +139,6 @@ export class SequenceService {
     }
   }
 
-  /**
-   * Exécuter une action pour un recipient
-   */
   private static async executeAction(
     sequence: any,
     recipientIndex: number,
@@ -158,7 +155,7 @@ export class SequenceService {
       sequence.activeCount = Math.max(0, (sequence.activeCount || 0) - 1);
 
       console.log(
-        `\nLead ${recipient.leadRef} a terminé la séquence "${sequence.name}"`,
+        `\n✅ Lead ${recipient.leadRef} a déjà terminé la séquence "${sequence.name}"`,
       );
       return false;
     }
@@ -203,13 +200,16 @@ export class SequenceService {
         error = result.error;
       }
 
-      console.log(`${success ? "Envoyé avec succès" : "Échec: " + error}`);
+      console.log(
+        `${success ? "✅ Envoyé avec succès" : "❌ Échec: " + error}`,
+      );
     } catch (err: any) {
       success = false;
       error = err.message;
-      console.log(`Erreur: ${error}`);
+      console.log(`❌ Erreur: ${error}`);
     }
 
+    // Enregistrer l'étape complétée
     recipient.stepsCompleted.push({
       stepNumber: stepIndex + 1,
       completedAt: new Date(),
@@ -217,18 +217,28 @@ export class SequenceService {
       error,
     });
 
+    // Passer à l'étape suivante
     recipient.currentStep = stepIndex + 1;
-    recipient.status = "in_progress";
 
+    // Vérifier s'il y a une prochaine étape
     const nextStep = sequence.steps[recipient.currentStep];
     if (nextStep) {
+      // Il reste des étapes
+      recipient.status = "in_progress";
       const nextDate = new Date();
       nextDate.setDate(nextDate.getDate() + nextStep.delayDays);
       recipient.nextActionAt = nextDate;
-
-      console.log(`Prochaine action: ${nextDate.toLocaleString("fr-FR")}`);
+      console.log(`📅 Prochaine action: ${nextDate.toLocaleString("fr-FR")}`);
     } else {
+      // C'était la dernière étape !
+      recipient.status = "completed";
+      recipient.completedAt = new Date();
       recipient.nextActionAt = undefined;
+      sequence.completedCount = (sequence.completedCount || 0) + 1;
+      sequence.activeCount = Math.max(0, (sequence.activeCount || 0) - 1);
+      console.log(
+        `\n Lead ${recipient.leadRef} a terminé TOUTES les étapes de la séquence !`,
+      );
     }
 
     return true;
