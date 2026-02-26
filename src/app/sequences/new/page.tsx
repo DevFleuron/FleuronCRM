@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -13,7 +13,9 @@ import {
 import { Button } from "@/src/components/ui/Button";
 import { useToast } from "@/src/components/contexts/ToastContext";
 import { ApiService } from "@/src/lib/api";
-import type { Lead, Template } from "@/src/types";
+import type { Lead, Template, LeadFilters } from "@/src/types";
+import { LeadFiltersBar } from "@/src/components/features/leads/LeadFilters";
+import { getDepartementsFromRegion } from "@/src/lib/regions";
 import {
   DndContext,
   closestCenter,
@@ -199,6 +201,7 @@ export default function NewSequencePage() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [filters, setFilters] = useState<LeadFilters>({});
 
   // Steps avec ID unique pour le drag & drop
   const [steps, setSteps] = useState<Step[]>([
@@ -251,6 +254,54 @@ export default function NewSequencePage() {
     }
   };
 
+  // Filtrage côté client
+  const filteredLeads = useMemo(() => {
+    return leads.filter((lead) => {
+      // Filtre par département
+      if (filters.departement) {
+        const codePostal = (lead.codePostal || "").trim();
+        if (!codePostal.startsWith(filters.departement)) return false;
+      }
+
+      // Filtre par région
+      if (filters.region) {
+        const departements = getDepartementsFromRegion(filters.region);
+        const codePostal = (lead.codePostal || "").trim();
+        const dept = codePostal.substring(0, 2);
+        if (!departements.includes(dept)) return false;
+      }
+
+      // Autres filtres
+      if (filters.source && lead.source !== filters.source) return false;
+      if (
+        filters.typeInstallation &&
+        lead.typeInstallation !== filters.typeInstallation
+      )
+        return false;
+      if (filters.dateFrom && new Date(lead.date) < new Date(filters.dateFrom))
+        return false;
+      if (filters.dateTo && new Date(lead.date) > new Date(filters.dateTo))
+        return false;
+      if (filters.smsEnvoye === "yes" && !lead.smsEnvoye) return false;
+      if (filters.smsEnvoye === "no" && lead.smsEnvoye) return false;
+      if (filters.emailEnvoye === "yes" && !lead.emailEnvoye) return false;
+      if (filters.emailEnvoye === "no" && lead.emailEnvoye) return false;
+
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        return (
+          lead.nom?.toLowerCase().includes(searchLower) ||
+          lead.prenom?.toLowerCase().includes(searchLower) ||
+          lead.email?.toLowerCase().includes(searchLower) ||
+          lead.mobile?.includes(searchLower) ||
+          lead.ref?.includes(searchLower)
+        );
+      }
+
+      return true;
+    });
+  }, [leads, filters]);
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -286,10 +337,10 @@ export default function NewSequencePage() {
   };
 
   const handleSelectAllLeads = () => {
-    if (selectedLeadIds.length === leads.length) {
+    if (selectedLeadIds.length === filteredLeads.length) {
       setSelectedLeadIds([]);
     } else {
-      setSelectedLeadIds(leads.map((l) => l._id!));
+      setSelectedLeadIds(filteredLeads.map((l) => l._id!));
     }
   };
 
@@ -445,20 +496,33 @@ export default function NewSequencePage() {
       </div>
 
       {/* Leads */}
-      <div className="bg-[#111114] border border-slate-800 rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-[#111114] border border-slate-800 rounded-2xl p-6 space-y-4">
+        <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold">
-            Leads NRP ({selectedLeadIds.length} / {leads.length})
+            Leads NRP ({selectedLeadIds.length} / {filteredLeads.length})
           </h2>
+        </div>
+
+        {/* Filtres */}
+        <LeadFiltersBar
+          filters={filters}
+          onFiltersChange={setFilters}
+          onReset={() => setFilters({})}
+          onImport={() => {}}
+          resultsCount={filteredLeads.length}
+        />
+
+        {/* Liste des leads */}
+        <div className="flex justify-end">
           <Button variant="secondary" size="sm" onClick={handleSelectAllLeads}>
-            {selectedLeadIds.length === leads.length
+            {selectedLeadIds.length === filteredLeads.length
               ? "Tout désélectionner"
               : "Tout sélectionner"}
           </Button>
         </div>
 
         <div className="max-h-96 overflow-y-auto space-y-2">
-          {leads.map((lead) => (
+          {filteredLeads.map((lead) => (
             <label
               key={lead._id}
               className="flex items-center gap-3 p-3 bg-slate-900/50 border border-slate-700 rounded-lg cursor-pointer hover:bg-slate-900 transition-colors"

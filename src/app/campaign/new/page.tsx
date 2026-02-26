@@ -1,18 +1,19 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { CampaignWizard } from "@/src/components/features/campaigns/CampaignWizard";
 import { ApiService } from "@/src/lib/api";
 import { useToast } from "@/src/components/contexts/ToastContext";
-import type { Lead, Template } from "@/src/types";
+import type { Lead, Template, LeadFilters } from "@/src/types";
+import { getDepartementsFromRegion } from "@/src/lib/regions";
 
 export default function NewCampaignPage() {
   const { showToast } = useToast();
-  const [leads, setLeads] = useState<Lead[]>([]);
+  const [allLeads, setAllLeads] = useState<Lead[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState<LeadFilters>({});
 
-  // Charger les leads et templates au montage
   useEffect(() => {
     loadData();
   }, []);
@@ -21,20 +22,19 @@ export default function NewCampaignPage() {
     try {
       setLoading(true);
 
-      // Charger en parallèle
       const [leadsResponse, templatesResponse] = await Promise.all([
-        ApiService.getLeads({ rapport: "NRP" }), // Seulement les NRP
+        ApiService.getLeads({ rapport: "NRP" }),
         ApiService.getTemplates(),
       ]);
 
       if (leadsResponse.success) {
-        setLeads(leadsResponse.data);
+        setAllLeads(leadsResponse.data);
         console.log(`${leadsResponse.data.length} leads NRP chargés`);
       }
 
       if (templatesResponse.success) {
         setTemplates(templatesResponse.data);
-        console.log(` ${templatesResponse.data.length} templates chargés`);
+        console.log(`${templatesResponse.data.length} templates chargés`);
       }
     } catch (error: any) {
       console.error("Erreur loadData:", error);
@@ -43,6 +43,54 @@ export default function NewCampaignPage() {
       setLoading(false);
     }
   };
+
+  // Filtrage côté client
+  const filteredLeads = useMemo(() => {
+    return allLeads.filter((lead) => {
+      // Filtre par département
+      if (filters.departement) {
+        const codePostal = (lead.codePostal || "").trim();
+        if (!codePostal.startsWith(filters.departement)) return false;
+      }
+
+      // Filtre par région
+      if (filters.region) {
+        const departements = getDepartementsFromRegion(filters.region);
+        const codePostal = (lead.codePostal || "").trim();
+        const dept = codePostal.substring(0, 2);
+        if (!departements.includes(dept)) return false;
+      }
+
+      // Autres filtres
+      if (filters.source && lead.source !== filters.source) return false;
+      if (
+        filters.typeInstallation &&
+        lead.typeInstallation !== filters.typeInstallation
+      )
+        return false;
+      if (filters.dateFrom && new Date(lead.date) < new Date(filters.dateFrom))
+        return false;
+      if (filters.dateTo && new Date(lead.date) > new Date(filters.dateTo))
+        return false;
+      if (filters.smsEnvoye === "yes" && !lead.smsEnvoye) return false;
+      if (filters.smsEnvoye === "no" && lead.smsEnvoye) return false;
+      if (filters.emailEnvoye === "yes" && !lead.emailEnvoye) return false;
+      if (filters.emailEnvoye === "no" && lead.emailEnvoye) return false;
+
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        return (
+          lead.nom?.toLowerCase().includes(searchLower) ||
+          lead.prenom?.toLowerCase().includes(searchLower) ||
+          lead.email?.toLowerCase().includes(searchLower) ||
+          lead.mobile?.includes(searchLower) ||
+          lead.ref?.includes(searchLower)
+        );
+      }
+
+      return true;
+    });
+  }, [allLeads, filters]);
 
   if (loading) {
     return (
@@ -57,7 +105,6 @@ export default function NewCampaignPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold mb-2">
           Nouvelle campagne
@@ -67,8 +114,12 @@ export default function NewCampaignPage() {
         </p>
       </div>
 
-      {/* Wizard */}
-      <CampaignWizard leads={leads} templates={templates} />
+      <CampaignWizard
+        leads={filteredLeads}
+        templates={templates}
+        filters={filters}
+        onFiltersChange={setFilters}
+      />
     </div>
   );
 }

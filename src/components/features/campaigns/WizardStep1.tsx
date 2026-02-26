@@ -5,22 +5,40 @@ import { Users } from "lucide-react";
 import { LeadFiltersBar } from "@/src/components/features/leads/LeadFilters";
 import type { Lead, LeadFilters } from "@/src/types";
 import { SelectableLeadTable } from "../leads/SelectableLeadTable";
+import { getDepartementsFromRegion } from "@/src/lib/regions";
 
 interface WizardStep1Props {
   leads: Lead[];
   selectedIds: string[];
   onSelectionChange: (ids: string[]) => void;
+  filters: LeadFilters;
+  onFiltersChange: (filters: LeadFilters) => void;
 }
 
 export function WizardStep1({
   leads,
   selectedIds,
   onSelectionChange,
+  filters,
+  onFiltersChange,
 }: WizardStep1Props) {
-  const [filters, setFilters] = useState<LeadFilters>({});
-
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
+      // Filtre par département
+      if (filters.departement) {
+        const codePostal = (lead.codePostal || "").trim();
+        if (!codePostal.startsWith(filters.departement)) return false;
+      }
+
+      // Filtre par région
+      if (filters.region) {
+        const departements = getDepartementsFromRegion(filters.region);
+        const codePostal = (lead.codePostal || "").trim();
+        const dept = codePostal.substring(0, 2);
+        if (!departements.includes(dept)) return false;
+      }
+
+      // Autres filtres existants
       if (filters.rapport && lead.rapport !== filters.rapport) return false;
       if (filters.source && lead.source !== filters.source) return false;
       if (filters.dateFrom) {
@@ -92,9 +110,9 @@ export function WizardStep1({
       {/* Filters */}
       <LeadFiltersBar
         filters={filters}
-        onFiltersChange={setFilters}
-        onReset={() => setFilters({})}
-        onImport={() => {}} // Disabled in wizard
+        onFiltersChange={onFiltersChange} // ✅ Utiliser la prop
+        onReset={() => onFiltersChange({})} // ✅ Utiliser la prop
+        onImport={() => {}}
         resultsCount={filteredLeads.length}
       />
 

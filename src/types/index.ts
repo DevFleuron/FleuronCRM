@@ -48,6 +48,8 @@ export interface LeadFilters {
   smsEnvoye?: "all" | "yes" | "no";
   emailEnvoye?: "all" | "yes" | "no";
   search?: string;
+  departement?: string;
+  region?: string;
 }
 
 export interface DashboardStats {
@@ -88,6 +90,13 @@ export interface Template {
   usageCount?: number;
   ctaText?: string;
   ctaUrl?: string;
+  attachment?: {
+    filename: string;
+    path: string;
+    url: string;
+    size: number;
+    mimetype: string;
+  };
 }
 
 export interface TemplateFormData {
@@ -97,6 +106,13 @@ export interface TemplateFormData {
   content: string;
   ctaText?: string;
   ctaUrl?: string;
+  attachment?: {
+    filename: string;
+    path: string;
+    url: string;
+    size: number;
+    mimetype: string;
+  };
 }
 
 export interface Campaign {

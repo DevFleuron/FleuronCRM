@@ -11,14 +11,21 @@ import { WizardProgress } from "./WizardProgress";
 import { WizardStep1 } from "./WizardStep1";
 import { WizardStep2 } from "./WizardStep2";
 import { WizardStep3 } from "./WizardStep3";
-import type { Lead, Template, WizardStep } from "@/src/types";
+import type { Lead, Template, LeadFilters, WizardStep } from "@/src/types";
 
 interface CampaignWizardProps {
   leads: Lead[];
   templates: Template[];
+  filters: LeadFilters;
+  onFiltersChange: (filters: LeadFilters) => void;
 }
 
-export function CampaignWizard({ leads, templates }: CampaignWizardProps) {
+export function CampaignWizard({
+  leads,
+  templates,
+  filters,
+  onFiltersChange,
+}: CampaignWizardProps) {
   const router = useRouter();
   const { showToast } = useToast();
 
@@ -209,6 +216,8 @@ export function CampaignWizard({ leads, templates }: CampaignWizardProps) {
             leads={leads}
             selectedIds={selectedLeadIds}
             onSelectionChange={setSelectedLeadIds}
+            filters={filters}
+            onFiltersChange={onFiltersChange}
           />
         )}
 

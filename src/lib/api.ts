@@ -235,4 +235,27 @@ export class ApiService {
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
   }
+
+  static async uploadAttachment(file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(`${API_URL}/api/upload/attachment`, {
+      method: "POST",
+      body: formData,
+    });
+
+    return response.json();
+  }
+
+  static async deleteAttachment(filename: string) {
+    const response = await fetch(
+      `${API_URL}/api/upload/attachment/${filename}`,
+      {
+        method: "DELETE",
+      },
+    );
+
+    return response.json();
+  }
 }

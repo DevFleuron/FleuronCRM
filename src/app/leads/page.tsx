@@ -7,6 +7,7 @@ import { LeadImportModal } from "@/src/components/features/leads/LeadImportModal
 import { useToast } from "@/src/components/contexts/ToastContext";
 import type { Lead, LeadFilters } from "@/src/types";
 import { ApiService } from "@/src/lib/api";
+import { getDepartementsFromRegion } from "@/src/lib/regions";
 
 export default function LeadsPage() {
   const { showToast } = useToast();
@@ -44,6 +45,21 @@ export default function LeadsPage() {
   // Filtrage côté client
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
+      // Filtre par département
+      if (filters.departement) {
+        const codePostal = (lead.codePostal || "").trim();
+        if (!codePostal.startsWith(filters.departement)) return false;
+      }
+
+      // Filtre par région
+      if (filters.region) {
+        const departements = getDepartementsFromRegion(filters.region);
+        const codePostal = (lead.codePostal || "").trim();
+        const dept = codePostal.substring(0, 2);
+        if (!departements.includes(dept)) return false;
+      }
+
+      // Autres filtres
       if (filters.rapport && lead.rapport !== filters.rapport) return false;
       if (filters.source && lead.source !== filters.source) return false;
       if (filters.dateFrom) {
