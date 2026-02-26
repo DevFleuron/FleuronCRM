@@ -14,6 +14,8 @@ import statsRoutes from "./routes/stats.routes";
 import sequenceRoutes from "./routes/sequence.routes";
 import { runSequenceWorker } from "./workers/sequence.worker";
 import testRoutes from "./routes/test.routes";
+import uploadRoutes from "./routes/upload.routes";
+import path from "path";
 
 dotenv.config();
 
@@ -65,6 +67,8 @@ app.use("/api/templates", templateRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api/sequences", sequenceRoutes);
 app.use("/api/test", testRoutes);
+app.use("/api/upload", uploadRoutes);
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Démarrage du serveur
 app.listen(PORT, () => {

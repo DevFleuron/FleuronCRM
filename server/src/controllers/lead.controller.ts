@@ -17,6 +17,8 @@ export const getLeads = async (req: Request, res: Response): Promise<void> => {
       smsEnvoye,
       emailEnvoye,
       search,
+      departement,
+      region,
       limit = 50,
       skip = 0,
     } = req.query;
@@ -41,6 +43,29 @@ export const getLeads = async (req: Request, res: Response): Promise<void> => {
     if (emailEnvoye === "yes") filter.emailEnvoye = true;
     if (emailEnvoye === "no") filter.emailEnvoye = false;
 
+    // Filtrer par département
+    if (departement) {
+      // Nettoyer le département (enlever espaces)
+      const cleanDept = String(departement).trim();
+      // Chercher les codes postaux qui commencent par ce département (avec ou sans espaces)
+      filter.codePostal = {
+        $regex: `^\\s*${cleanDept}`,
+        $options: "i",
+      };
+      console.log(`Filtre département "${cleanDept}":`, filter.codePostal);
+    }
+
+    // Filtrer par région (basé sur départements)
+    if (region) {
+      const departements = getDepartementsFromRegion(region as string);
+      if (departements.length > 0) {
+        filter.codePostal = {
+          $regex: `^\\s*(${departements.join("|")})`,
+          $options: "i",
+        };
+        console.log(`Filtre région "${region}":`, filter.codePostal);
+      }
+    }
     // Recherche textuelle
     if (search) {
       filter.$or = [
@@ -77,6 +102,69 @@ export const getLeads = async (req: Request, res: Response): Promise<void> => {
     });
   }
 };
+
+/**
+ * Helper : Obtenir les départements d'une région
+ */
+function getDepartementsFromRegion(region: string): string[] {
+  const regions: Record<string, string[]> = {
+    "ile-de-france": ["75", "77", "78", "91", "92", "93", "94", "95"],
+    "auvergne-rhone-alpes": [
+      "01",
+      "03",
+      "07",
+      "15",
+      "26",
+      "38",
+      "42",
+      "43",
+      "63",
+      "69",
+      "73",
+      "74",
+    ],
+    bretagne: ["22", "29", "35", "56"],
+    "nouvelle-aquitaine": [
+      "16",
+      "17",
+      "19",
+      "23",
+      "24",
+      "33",
+      "40",
+      "47",
+      "64",
+      "79",
+      "86",
+      "87",
+    ],
+    occitanie: [
+      "09",
+      "11",
+      "12",
+      "30",
+      "31",
+      "32",
+      "34",
+      "46",
+      "48",
+      "65",
+      "66",
+      "81",
+      "82",
+    ],
+    "grand-est": ["08", "10", "51", "52", "54", "55", "57", "67", "68", "88"],
+    "hauts-de-france": ["02", "59", "60", "62", "80"],
+    normandie: ["14", "27", "50", "61", "76"],
+    "pays-de-la-loire": ["44", "49", "53", "72", "85"],
+    "provence-alpes-cote-azur": ["04", "05", "06", "13", "83", "84"],
+    "bourgogne-franche-comte": ["21", "25", "39", "58", "70", "71", "89", "90"],
+    "centre-val-de-loire": ["18", "28", "36", "37", "41", "45"],
+    corse: ["2A", "2B"],
+  };
+
+  return regions[region.toLowerCase()] || [];
+}
 
 /*
  GET /api/leads/:id

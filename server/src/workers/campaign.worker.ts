@@ -82,8 +82,6 @@ export async function processCampaignSending(campaignId: string) {
         // Remplacer les variables
         let content = BrevoService.replaceVariables(template.content, lead);
 
-        console.log(`   → Contenu: ${content.substring(0, 50)}...`);
-
         // Envoyer
         let result;
         if (campaign.type === "sms") {
@@ -103,7 +101,12 @@ export async function processCampaignSending(campaignId: string) {
             );
           }
 
-          result = await BrevoService.sendEmail(lead.email, subject, content);
+          result = await BrevoService.sendEmail(
+            lead.email,
+            subject,
+            content,
+            template.attachment,
+          );
         }
 
         if (result.success) {

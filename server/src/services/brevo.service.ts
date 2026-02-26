@@ -1,6 +1,8 @@
 import axios from "axios";
 import Lead from "../models/Lead.model";
 import { getEmailTemplate } from "@/src/templates/email-layout";
+import fs from "fs";
+import path from "path";
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const BREVO_API_URL = "https://api.brevo.com/v3";
@@ -56,27 +58,51 @@ export class BrevoService {
     }
   }
 
-  /*
+  /**
    * Envoyer un Email via Brevo
    */
-  static async sendEmail(to: string, subject: string, content: string) {
+  static async sendEmail(
+    to: string,
+    subject: string,
+    content: string,
+    attachmentData?: { filename: string; path: string },
+  ) {
     try {
-      console.log(`Envoi Email vers ${to}`);
-
-      //  Wrapper le contenu dans le template HTML stylisé
+      // Wrapper le contenu dans le template HTML stylisé
       const htmlContent = getEmailTemplate(content);
+
+      const emailData: any = {
+        sender: {
+          name: BREVO_SENDER_NAME,
+          email: BREVO_SENDER_EMAIL,
+        },
+        to: [{ email: to }],
+        subject,
+        htmlContent,
+      };
+
+      // Ajouter la pièce jointe si présente
+      if (attachmentData) {
+        if (fs.existsSync(attachmentData.path)) {
+          const fileContent = fs.readFileSync(attachmentData.path);
+          const base64Content = fileContent.toString("base64");
+
+          emailData.attachment = [
+            {
+              content: base64Content,
+              name: attachmentData.filename,
+            },
+          ];
+        } else {
+          console.log(`⚠️ Fichier non trouvé: ${attachmentData.path}`);
+        }
+      } else {
+        console.log(`ℹPas de pièce jointe`);
+      }
 
       const response = await axios.post(
         `${BREVO_API_URL}/smtp/email`,
-        {
-          sender: {
-            name: BREVO_SENDER_NAME,
-            email: BREVO_SENDER_EMAIL,
-          },
-          to: [{ email: to }],
-          subject,
-          htmlContent,
-        },
+        emailData,
         {
           headers: {
             "api-key": BREVO_API_KEY,
@@ -85,11 +111,11 @@ export class BrevoService {
         },
       );
 
-      console.log(`Email envoyé vers ${to}`);
+      console.log(`✅ Email envoyé vers ${to}`);
       return { success: true, data: response.data };
     } catch (error: any) {
       console.error(
-        "Erreur envoi Email:",
+        "❌ Erreur envoi Email:",
         error.response?.data || error.message,
       );
       return {
@@ -99,7 +125,7 @@ export class BrevoService {
     }
   }
 
-  /*
+  /**
    * Remplacer les variables dans le template
    */
   static replaceVariables(content: string, lead: any): string {

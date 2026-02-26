@@ -40,7 +40,8 @@ export const createTemplate = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const { name, type, subject, content } = req.body;
+    const { name, type, subject, content, ctaText, ctaUrl, attachment } =
+      req.body; // ✅ Ajouter ctaText, ctaUrl, attachment
 
     if (!name || !type || !content) {
       res.status(400).json({
@@ -63,6 +64,9 @@ export const createTemplate = async (
       subject,
       content,
       variables,
+      ctaText,
+      ctaUrl,
+      attachment,
       usageCount: 0,
     });
 
@@ -91,7 +95,8 @@ export const updateTemplate = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const { name, type, subject, content } = req.body;
+    const { name, type, subject, content, ctaText, ctaUrl, attachment } =
+      req.body; // ✅ Ajouter
 
     const template = await Template.findById(id);
 
@@ -116,6 +121,10 @@ export const updateTemplate = async (
     template.type = type || template.type;
     template.subject = subject !== undefined ? subject : template.subject;
     template.content = content || template.content;
+    template.ctaText = ctaText !== undefined ? ctaText : template.ctaText; // ✅ Ajouter
+    template.ctaUrl = ctaUrl !== undefined ? ctaUrl : template.ctaUrl; // ✅ Ajouter
+    template.attachment =
+      attachment !== undefined ? attachment : template.attachment; // ✅ Ajouter
 
     await template.save();
 

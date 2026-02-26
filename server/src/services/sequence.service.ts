@@ -155,7 +155,7 @@ export class SequenceService {
       sequence.activeCount = Math.max(0, (sequence.activeCount || 0) - 1);
 
       console.log(
-        `\n✅ Lead ${recipient.leadRef} a déjà terminé la séquence "${sequence.name}"`,
+        `\n Lead ${recipient.leadRef} a déjà terminé la séquence "${sequence.name}"`,
       );
       return false;
     }
@@ -191,10 +191,13 @@ export class SequenceService {
           template.subject || "",
           lead,
         );
+
+        // Passer l'attachment si présent
         const result = await BrevoService.sendEmail(
           lead.email,
           subject,
           content,
+          template.attachment,
         );
         success = result.success;
         error = result.error;
@@ -228,7 +231,7 @@ export class SequenceService {
       const nextDate = new Date();
       nextDate.setDate(nextDate.getDate() + nextStep.delayDays);
       recipient.nextActionAt = nextDate;
-      console.log(`📅 Prochaine action: ${nextDate.toLocaleString("fr-FR")}`);
+      console.log(` Prochaine action: ${nextDate.toLocaleString("fr-FR")}`);
     } else {
       // C'était la dernière étape !
       recipient.status = "completed";
