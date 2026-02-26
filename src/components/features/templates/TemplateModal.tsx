@@ -248,14 +248,22 @@ export function TemplateModal({
 
           {/* Subject (Email only) */}
           {formData.type === "email" && (
-            <Input
-              label="Objet *"
-              value={formData.subject || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, subject: e.target.value })
-              }
-              placeholder="Objet de l'email"
-            />
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">
+                Objet *
+              </label>
+              <textarea
+                value={formData.subject || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, subject: e.target.value })
+                }
+                placeholder="Objet de l'email"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-colors"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                {formData.subject?.length || 0} caractères
+              </p>
+            </div>
           )}
 
           {/* Variables */}

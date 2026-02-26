@@ -115,6 +115,21 @@ export interface TemplateFormData {
   };
 }
 
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: "admin" | "user";
+}
+
+export interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  isAdmin: boolean;
+}
+
 export interface Campaign {
   _id?: string;
   name: string;

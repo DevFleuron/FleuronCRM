@@ -2,45 +2,50 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export class ApiService {
   /**
-   * Helper pour gérer les réponses API
+   * Helper centralisé — credentials: "include" sur toutes les requêtes
    */
-  private static async handleResponse(response: Response) {
-    const contentType = response.headers.get("content-type");
+  private static async fetchApi(
+    url: string,
+    options: RequestInit = {},
+  ): Promise<any> {
+    const isFormData = options.body instanceof FormData;
 
+    const response = await fetch(`${API_URL}${url}`, {
+      ...options,
+      credentials: "include",
+      headers: isFormData
+        ? undefined // Laisser le browser gérer le Content-Type pour FormData
+        : {
+            "Content-Type": "application/json",
+            ...options.headers,
+          },
+    });
+
+    const contentType = response.headers.get("content-type");
     if (!contentType?.includes("application/json")) {
       throw new Error("Le serveur a retourné du HTML au lieu de JSON");
     }
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Erreur API");
-    }
-
-    return data;
+    return response.json();
   }
 
   /**
    * LEADS
    */
   static async getLeads(filters?: any) {
-    const params = new URLSearchParams(filters).toString();
-    const response = await fetch(`${API_URL}/api/leads?${params}`);
-    return response.json();
+    const params = filters ? new URLSearchParams(filters).toString() : "";
+    return this.fetchApi(`/api/leads?${params}`);
   }
 
   static async getLeadById(id: string) {
-    const response = await fetch(`${API_URL}/api/leads/${id}`);
-    return response.json();
+    return this.fetchApi(`/api/leads/${id}`);
   }
 
   static async updateLead(id: string, data: any) {
-    const response = await fetch(`${API_URL}/api/leads/${id}`, {
+    return this.fetchApi(`/api/leads/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    return response.json();
   }
 
   /**
@@ -49,12 +54,10 @@ export class ApiService {
   static async importCSV(file: File) {
     const formData = new FormData();
     formData.append("file", file);
-
-    const response = await fetch(`${API_URL}/api/import/csv`, {
+    return this.fetchApi(`/api/import/csv`, {
       method: "POST",
       body: formData,
     });
-    return response.json();
   }
 
   /**
@@ -62,88 +65,70 @@ export class ApiService {
    */
   static async getTemplates(type?: "sms" | "email") {
     const params = type ? `?type=${type}` : "";
-    const response = await fetch(`${API_URL}/api/templates${params}`);
-    return response.json();
+    return this.fetchApi(`/api/templates${params}`);
   }
 
   static async createTemplate(data: any) {
-    const response = await fetch(`${API_URL}/api/templates`, {
+    return this.fetchApi(`/api/templates`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    return response.json();
   }
 
   static async updateTemplate(id: string, data: any) {
-    const response = await fetch(`${API_URL}/api/templates/${id}`, {
+    return this.fetchApi(`/api/templates/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    return response.json();
   }
 
   static async deleteTemplate(id: string) {
-    const response = await fetch(`${API_URL}/api/templates/${id}`, {
+    return this.fetchApi(`/api/templates/${id}`, {
       method: "DELETE",
     });
-    return response.json();
   }
 
   /**
    * CAMPAIGNS
    */
   static async getCampaigns() {
-    const response = await fetch(`${API_URL}/api/campaigns`);
-    return response.json();
+    return this.fetchApi(`/api/campaigns`);
   }
 
   static async createCampaign(data: any) {
-    const response = await fetch(`${API_URL}/api/campaigns`, {
+    return this.fetchApi(`/api/campaigns`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    return response.json();
   }
 
   static async getCampaignById(id: string) {
-    const response = await fetch(`${API_URL}/api/campaigns/${id}`);
-    return response.json();
+    return this.fetchApi(`/api/campaigns/${id}`);
   }
 
   /**
    * IMPORT HISTORY
    */
   static async getImportHistory() {
-    const response = await fetch(`${API_URL}/api/history`);
-    return response.json();
+    return this.fetchApi(`/api/history`);
   }
 
   static async getImportById(id: string) {
-    const response = await fetch(`${API_URL}/api/history/${id}`);
-    return response.json();
+    return this.fetchApi(`/api/history/${id}`);
   }
 
   /**
    * STATS / DASHBOARD
    */
   static async getDashboardStats() {
-    const response = await fetch(`${API_URL}/api/stats/dashboard`);
-    return response.json();
+    return this.fetchApi(`/api/stats/dashboard`);
   }
 
   /**
    * SEQUENCES
    */
   static async getSequences() {
-    const response = await fetch(`${API_URL}/api/sequences`, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    return await this.handleResponse(response);
+    return this.fetchApi(`/api/sequences`);
   }
 
   static async createSequence(data: {
@@ -155,51 +140,35 @@ export class ApiService {
     }>;
     leadIds: string[];
   }) {
-    const response = await fetch(`${API_URL}/api/sequences`, {
+    return this.fetchApi(`/api/sequences`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(data),
     });
-    return await this.handleResponse(response);
   }
 
   static async getSequenceById(id: string) {
-    const response = await fetch(`${API_URL}/api/sequences/${id}`, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    return await this.handleResponse(response);
+    return this.fetchApi(`/api/sequences/${id}`);
   }
 
   static async stopSequence(id: string) {
-    const response = await fetch(`${API_URL}/api/sequences/${id}/stop`, {
+    return this.fetchApi(`/api/sequences/${id}/stop`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
     });
-    return await this.handleResponse(response);
   }
+
   /**
    * EXPORT
    */
   static async exportLeadsCSV(filters?: any) {
     const response = await fetch(`${API_URL}/api/export/csv`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ filters }),
     });
 
-    if (!response.ok) {
-      throw new Error("Erreur lors de l'export");
-    }
+    if (!response.ok) throw new Error("Erreur lors de l'export");
 
-    // Télécharger le fichier
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -214,17 +183,13 @@ export class ApiService {
   static async exportLeadsExcel(filters?: any) {
     const response = await fetch(`${API_URL}/api/export/excel`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ filters }),
     });
 
-    if (!response.ok) {
-      throw new Error("Erreur lors de l'export");
-    }
+    if (!response.ok) throw new Error("Erreur lors de l'export");
 
-    // Télécharger le fichier
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -236,26 +201,66 @@ export class ApiService {
     document.body.removeChild(a);
   }
 
+  /**
+   * UPLOAD
+   */
   static async uploadAttachment(file: File) {
     const formData = new FormData();
     formData.append("file", file);
-
-    const response = await fetch(`${API_URL}/api/upload/attachment`, {
+    return this.fetchApi(`/api/upload/attachment`, {
       method: "POST",
       body: formData,
     });
-
-    return response.json();
   }
 
   static async deleteAttachment(filename: string) {
-    const response = await fetch(
-      `${API_URL}/api/upload/attachment/${filename}`,
-      {
-        method: "DELETE",
-      },
-    );
+    return this.fetchApi(`/api/upload/attachment/${filename}`, {
+      method: "DELETE",
+    });
+  }
 
-    return response.json();
+  /**
+   * AUTH
+   */
+  static async login(email: string, password: string) {
+    return this.fetchApi(`/api/auth/login`, {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+  }
+
+  static async logout() {
+    return this.fetchApi(`/api/auth/logout`, {
+      method: "POST",
+    });
+  }
+
+  static async getMe() {
+    return this.fetchApi(`/api/auth/me`);
+  }
+
+  /**
+   * USERS (admin)
+   */
+  static async getUsers() {
+    return this.fetchApi(`/api/auth/users`);
+  }
+
+  static async createUser(data: {
+    email: string;
+    password: string;
+    name: string;
+    role: string;
+  }) {
+    return this.fetchApi(`/api/auth/users`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  static async deleteUser(id: string) {
+    return this.fetchApi(`/api/auth/users/${id}`, {
+      method: "DELETE",
+    });
   }
 }
