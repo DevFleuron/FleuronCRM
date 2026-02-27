@@ -20,8 +20,8 @@ export interface ICampaignRecipient {
   error?: string;
 }
 
-/**
- * Interface pour une campagne
+/*
+ Interface pour une campagne
  */
 export interface ICampaign {
   name: string;

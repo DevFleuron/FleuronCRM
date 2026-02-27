@@ -2,8 +2,8 @@ import { Request, Response } from "express";
 import Template from "../models/Template.model";
 
 /**
- * GET /api/templates
- * Récupérer tous les templates
+ GET /api/templates
+ Récupérer tous les templates
  */
 export const getTemplates = async (
   req: Request,
@@ -22,7 +22,7 @@ export const getTemplates = async (
       data: templates,
     });
   } catch (error: any) {
-    console.error("❌ Erreur getTemplates:", error);
+    console.error("Erreur getTemplates:", error);
     res.status(500).json({
       success: false,
       message: "Erreur lors de la récupération des templates",
@@ -32,15 +32,16 @@ export const getTemplates = async (
 };
 
 /**
- * POST /api/templates
- * Créer un nouveau template
+ POST /api/templates
+ Créer un nouveau template
  */
 export const createTemplate = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
   try {
-    const { name, type, subject, content } = req.body;
+    const { name, type, subject, content, ctaText, ctaUrl, attachment } =
+      req.body; // ✅ Ajouter ctaText, ctaUrl, attachment
 
     if (!name || !type || !content) {
       res.status(400).json({
@@ -63,6 +64,9 @@ export const createTemplate = async (
       subject,
       content,
       variables,
+      ctaText,
+      ctaUrl,
+      attachment,
       usageCount: 0,
     });
 
@@ -72,7 +76,7 @@ export const createTemplate = async (
       data: template,
     });
   } catch (error: any) {
-    console.error("❌ Erreur createTemplate:", error);
+    console.error("Erreur createTemplate:", error);
     res.status(500).json({
       success: false,
       message: "Erreur lors de la création du template",
@@ -82,8 +86,8 @@ export const createTemplate = async (
 };
 
 /**
- * PUT /api/templates/:id
- * Mettre à jour un template
+ PUT /api/templates/:id
+ Mettre à jour un template
  */
 export const updateTemplate = async (
   req: Request,
@@ -91,7 +95,8 @@ export const updateTemplate = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const { name, type, subject, content } = req.body;
+    const { name, type, subject, content, ctaText, ctaUrl, attachment } =
+      req.body; // ✅ Ajouter
 
     const template = await Template.findById(id);
 
@@ -116,6 +121,10 @@ export const updateTemplate = async (
     template.type = type || template.type;
     template.subject = subject !== undefined ? subject : template.subject;
     template.content = content || template.content;
+    template.ctaText = ctaText !== undefined ? ctaText : template.ctaText; // ✅ Ajouter
+    template.ctaUrl = ctaUrl !== undefined ? ctaUrl : template.ctaUrl; // ✅ Ajouter
+    template.attachment =
+      attachment !== undefined ? attachment : template.attachment; // ✅ Ajouter
 
     await template.save();
 
@@ -125,7 +134,7 @@ export const updateTemplate = async (
       data: template,
     });
   } catch (error: any) {
-    console.error("❌ Erreur updateTemplate:", error);
+    console.error("Erreur updateTemplate:", error);
     res.status(500).json({
       success: false,
       message: "Erreur lors de la mise à jour du template",
@@ -135,8 +144,8 @@ export const updateTemplate = async (
 };
 
 /**
- * DELETE /api/templates/:id
- * Supprimer un template
+ DELETE /api/templates/:id
+ Supprimer un template
  */
 export const deleteTemplate = async (
   req: Request,
@@ -160,7 +169,7 @@ export const deleteTemplate = async (
       message: "Template supprimé avec succès",
     });
   } catch (error: any) {
-    console.error("❌ Erreur deleteTemplate:", error);
+    console.error("Erreur deleteTemplate:", error);
     res.status(500).json({
       success: false,
       message: "Erreur lors de la suppression du template",

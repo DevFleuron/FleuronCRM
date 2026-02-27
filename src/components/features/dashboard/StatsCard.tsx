@@ -1,54 +1,60 @@
+"use client";
+
 import React from "react";
-import { LucideIcon, TrendingUp, TrendingDown } from "lucide-react";
+import { LucideIcon, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
 interface StatsCardProps {
   title: string;
-  value: string | number;
-  change: number;
-  trend: "up" | "down";
+  value: number | string;
   icon: LucideIcon;
-  color: "indigo" | "purple" | "emerald" | "blue";
+  color: "indigo" | "purple" | "success" | "error" | "warning" | "blue";
+  trend?: "up" | "down" | "neutral";
+  subtitle?: string;
 }
 
 export function StatsCard({
   title,
   value,
-  change,
-  trend,
   icon: Icon,
   color,
+  trend,
+  subtitle,
 }: StatsCardProps) {
   const colorClasses = {
-    indigo: "bg-indigo-500/10 text-indigo-500",
-    purple: "bg-purple-500/10 text-purple-500",
-    emerald: "bg-success/10 text-success",
-    blue: "bg-info/10 text-info",
+    indigo: "bg-indigo-500/10 text-indigo-400",
+    purple: "bg-purple-500/10 text-purple-400",
+    success: "bg-success/10 text-success",
+    error: "bg-error/10 text-error",
+    warning: "bg-warning/10 text-warning",
+    blue: "bg-blue-500/10 text-blue-400",
   };
 
   return (
-    <div className="card-base card-hover">
-      <div className="flex justify-between items-start mb-4">
-        <div className={cn("p-3 rounded-xl", colorClasses[color])}>
-          <Icon className="w-6 h-6" />
+    <div className="bg-[#111114] border border-slate-800 rounded-xl p-6">
+      <div className="flex items-start justify-between mb-4">
+        <div className={cn("p-3 rounded-lg", colorClasses[color])}>
+          <Icon className="w-5 h-5" />
         </div>
-        <div
-          className={cn(
-            "flex items-center gap-1 text-sm font-medium",
-            trend === "up" ? "text-success" : "text-error",
-          )}
-        >
-          {trend === "up" ? (
-            <TrendingUp className="w-4 h-4" />
-          ) : (
-            <TrendingDown className="w-4 h-4" />
-          )}
-          {change > 0 ? "+" : ""}
-          {change}%
-        </div>
+        {trend && trend !== "neutral" && (
+          <div
+            className={cn(
+              "flex items-center gap-1 text-xs font-medium",
+              trend === "up" ? "text-success" : "text-error",
+            )}
+          >
+            {trend === "up" ? (
+              <ArrowUpRight className="w-4 h-4" />
+            ) : (
+              <ArrowDownRight className="w-4 h-4" />
+            )}
+          </div>
+        )}
       </div>
-      <h3 className="text-text-secondary text-sm font-medium mb-1">{title}</h3>
-      <p className="text-2xl font-bold text-text-primary">{value}</p>
+
+      <p className="text-sm text-slate-400 mb-1">{title}</p>
+      <p className="text-3xl font-bold mb-1">{value}</p>
+      {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
     </div>
   );
 }

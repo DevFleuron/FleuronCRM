@@ -3,6 +3,8 @@
 import React from "react";
 import { Search, X, Filter, Upload } from "lucide-react";
 import { Select } from "@/src/components/ui/Select";
+import { DepartementSelect } from "./filters/DepartementSelect";
+import { RegionSelect } from "./filters/RegionSelect";
 import { Input } from "@/src/components/ui/Input";
 import { Button } from "@/src/components/ui/Button";
 import { cn } from "@/src/lib/utils";
@@ -162,6 +164,28 @@ export function LeadFiltersBar({
               }
               options={SMS_EMAIL_OPTIONS}
             />
+
+            {/* Département */}
+            <div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <DepartementSelect
+                  value={filters.departement || ""}
+                  onChange={(value) =>
+                    onFiltersChange({
+                      ...filters,
+                      departement: value || undefined,
+                    })
+                  }
+                />
+
+                <RegionSelect
+                  value={filters.region || ""}
+                  onChange={(value) =>
+                    onFiltersChange({ ...filters, region: value || undefined })
+                  }
+                />
+              </div>
+            </div>
 
             <div className="flex items-end">
               <Button

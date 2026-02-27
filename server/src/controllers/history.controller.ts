@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import ImportHistory from "../models/ImportHistory.model";
 
-/**
- * GET /api/history
- * Récupérer l'historique des imports
+/*
+GET /api/history
+Récupérer l'historique des imports
  */
 export const getImportHistory = async (
   req: Request,
@@ -29,7 +29,7 @@ export const getImportHistory = async (
       },
     });
   } catch (error: any) {
-    console.error("❌ Erreur getImportHistory:", error);
+    console.error("Erreur getImportHistory:", error);
     res.status(500).json({
       success: false,
       message: "Erreur lors de la récupération de l'historique",
@@ -38,9 +38,9 @@ export const getImportHistory = async (
   }
 };
 
-/**
- * GET /api/history/:id
- * Récupérer un import spécifique avec tous les détails
+/*
+ GET /api/history/:id
+ Récupérer un import spécifique avec tous les détails
  */
 export const getImportHistoryById = async (
   req: Request,
@@ -64,7 +64,7 @@ export const getImportHistoryById = async (
       data: history,
     });
   } catch (error: any) {
-    console.error("❌ Erreur getImportHistoryById:", error);
+    console.error("Erreur getImportHistoryById:", error);
     res.status(500).json({
       success: false,
       message: "Erreur lors de la récupération de l'import",

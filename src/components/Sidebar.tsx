@@ -1,9 +1,19 @@
 'use client'
 
 import React, { useState } from 'react'
-import { LayoutDashboard, Send, FileText, History, Users, LogOut, ChevronLeft } from 'lucide-react'
+import {
+  LayoutDashboard,
+  Send,
+  FileText,
+  History,
+  Users,
+  LogOut,
+  ChevronLeft,
+  Zap,
+} from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/src/lib/utils'
+import { useAuth } from '../contexts/AuthContext'
 
 const navigation = [
   {
@@ -20,20 +30,33 @@ const navigation = [
   },
   { id: 'templates', name: 'Modèles NRP', icon: FileText, href: '/templates' },
   {
-    id: 'history',
+    id: 'campaign-history',
     name: 'Historique Relances',
     icon: History,
     href: '/campaign/history',
   },
-  { id: 'leads', name: 'Leads NRP', icon: Users, href: '/leads' },
+  { id: 'leads', name: 'Leads', icon: Users, href: '/leads' },
+  {
+    id: 'sequences',
+    name: 'Séquences',
+    href: '/sequences',
+    icon: Zap,
+  },
+  {
+    id: 'import-history',
+    name: 'Historique Imports',
+    href: '/history',
+    icon: History,
+  },
 ]
 
 interface SidebarProps {
-  isMobileMenuOpen: boolean
-  onClose: () => void
+  isMobileMenuOpen?: boolean
+  onClose?: () => void
 }
 
-export function Sidebar({ isMobileMenuOpen, onClose }: SidebarProps) {
+export function Sidebar({ isMobileMenuOpen = false, onClose = () => {} }: SidebarProps) {
+  const { user, logout } = useAuth()
   const [isOpen, setIsOpen] = useState(true)
   const pathname = usePathname()
   const router = useRouter()
@@ -45,9 +68,8 @@ export function Sidebar({ isMobileMenuOpen, onClose }: SidebarProps) {
     setIsOpen(!isOpen)
   }
 
-  const handleLogout = () => {
-    // Ajoutez ici votre logique de déconnexion
-    router.push('/login')
+  const handleLogout = async () => {
+    logout()
   }
 
   return (

@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-/**
- * Interface pour un changement détecté
+/*
+ Interface pour un changement détecté
  */
 export interface IDetectedChange {
   leadRef: string;
@@ -13,8 +13,8 @@ export interface IDetectedChange {
   timestamp: Date;
 }
 
-/**
- * Interface pour l'historique d'import
+/*
+ Interface pour l'historique d'import
  */
 export interface IImportHistory {
   nomFichier: string;

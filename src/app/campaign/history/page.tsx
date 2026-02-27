@@ -10,8 +10,9 @@ import { CampaignDetailsModal } from "@/src/components/features/campaigns/Campai
 import { useToast } from "@/src/components/contexts/ToastContext";
 import { ApiService } from "@/src/lib/api";
 import type { Campaign } from "@/src/types";
+import { Suspense } from "react";
 
-export default function CampaignHistoryPage() {
+function CampaignHistoryContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
@@ -49,12 +50,12 @@ export default function CampaignHistoryPage() {
 
       if (response.success) {
         setCampaigns(response.data);
-        console.log(`✅ ${response.data.length} campagnes chargées`);
+        console.log(`${response.data.length} campagnes chargées`);
       } else {
         showToast("error", "Erreur", "Impossible de charger les campagnes");
       }
     } catch (error: any) {
-      console.error("❌ Erreur loadCampaigns:", error);
+      console.error("Erreur loadCampaigns:", error);
       showToast("error", "Erreur", "Erreur lors du chargement des campagnes");
     } finally {
       setLoading(false);
@@ -113,10 +114,9 @@ export default function CampaignHistoryPage() {
         <Button
           variant="primary"
           size="lg"
-          onClick={() => router.push("/campaigns/new")}
+          onClick={() => router.push("/campaign/new")}
           className="w-full lg:w-auto"
         >
-          <Plus className="w-5 h-5" />
           Nouvelle Relance
         </Button>
       </div>
@@ -280,5 +280,22 @@ export default function CampaignHistoryPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function CampaignHistoryPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-100">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-slate-400">Chargement...</p>
+          </div>
+        </div>
+      }
+    >
+      <CampaignHistoryContent />
+    </Suspense>
   );
 }

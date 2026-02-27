@@ -3,24 +3,42 @@
 import React, { useState, useMemo } from "react";
 import { Users } from "lucide-react";
 import { LeadFiltersBar } from "@/src/components/features/leads/LeadFilters";
-import { LeadTable } from "@/src/components/features/leads/LeadTable";
 import type { Lead, LeadFilters } from "@/src/types";
+import { SelectableLeadTable } from "../leads/SelectableLeadTable";
+import { getDepartementsFromRegion } from "@/src/lib/regions";
 
 interface WizardStep1Props {
   leads: Lead[];
   selectedIds: string[];
   onSelectionChange: (ids: string[]) => void;
+  filters: LeadFilters;
+  onFiltersChange: (filters: LeadFilters) => void;
 }
 
 export function WizardStep1({
   leads,
   selectedIds,
   onSelectionChange,
+  filters,
+  onFiltersChange,
 }: WizardStep1Props) {
-  const [filters, setFilters] = useState<LeadFilters>({});
-
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
+      // Filtre par département
+      if (filters.departement) {
+        const codePostal = (lead.codePostal || "").trim();
+        if (!codePostal.startsWith(filters.departement)) return false;
+      }
+
+      // Filtre par région
+      if (filters.region) {
+        const departements = getDepartementsFromRegion(filters.region);
+        const codePostal = (lead.codePostal || "").trim();
+        const dept = codePostal.substring(0, 2);
+        if (!departements.includes(dept)) return false;
+      }
+
+      // Autres filtres existants
       if (filters.rapport && lead.rapport !== filters.rapport) return false;
       if (filters.source && lead.source !== filters.source) return false;
       if (filters.dateFrom) {
@@ -75,7 +93,7 @@ export function WizardStep1({
       {/* Info Card */}
       <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4">
         <div className="flex items-center gap-3">
-          <Users className="w-5 h-5 text-indigo-400 flex-shrink-0" />
+          <Users className="w-5 h-5 text-indigo-400 shrink-0" />
           <div>
             <p className="text-sm font-semibold text-indigo-400">
               {selectedIds.length} destinataire
@@ -92,23 +110,18 @@ export function WizardStep1({
       {/* Filters */}
       <LeadFiltersBar
         filters={filters}
-        onFiltersChange={setFilters}
-        onReset={() => setFilters({})}
-        onImport={() => {}} // Disabled in wizard
+        onFiltersChange={onFiltersChange} // ✅ Utiliser la prop
+        onReset={() => onFiltersChange({})} // ✅ Utiliser la prop
+        onImport={() => {}}
         resultsCount={filteredLeads.length}
       />
 
       {/* Table */}
-      <LeadTable
+      <SelectableLeadTable
         leads={filteredLeads}
         selectedIds={selectedIds}
         onToggleSelect={handleToggleSelect}
         onToggleSelectAll={handleToggleSelectAll}
-        onSendSMS={() => {}}
-        onSendEmail={() => {}}
-        onViewDetails={() => {}}
-        onBulkSMS={() => {}}
-        onBulkEmail={() => {}}
       />
     </div>
   );

@@ -1,10 +1,11 @@
 import { Request, Response } from "express";
 import Campaign from "../models/Campaign.model";
 import Lead from "../models/Lead.model";
+import { processCampaignSending } from "../workers/campaign.worker";
 
-/**
- * GET /api/campaigns
- * Récupérer toutes les campagnes
+/*
+  GET /api/campaigns
+ Récupérer toutes les campagnes
  */
 export const getCampaigns = async (
   req: Request,
@@ -35,7 +36,7 @@ export const getCampaigns = async (
       },
     });
   } catch (error: any) {
-    console.error("❌ Erreur getCampaigns:", error);
+    console.error("Erreur getCampaigns:", error);
     res.status(500).json({
       success: false,
       message: "Erreur lors de la récupération des campagnes",
@@ -100,6 +101,11 @@ export const createCampaign = async (
       scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
       createdBy: req.body.userId || "system", // TODO: Récupérer depuis la session
     });
+    if (!scheduledAt) {
+      processCampaignSending(campaign._id.toString()).catch((error) => {
+        console.error("Erreur worker:", error);
+      });
+    }
 
     res.status(201).json({
       success: true,
@@ -107,7 +113,7 @@ export const createCampaign = async (
       data: campaign,
     });
   } catch (error: any) {
-    console.error("❌ Erreur createCampaign:", error);
+    console.error("Erreur createCampaign:", error);
     res.status(500).json({
       success: false,
       message: "Erreur lors de la création de la campagne",
@@ -116,10 +122,11 @@ export const createCampaign = async (
   }
 };
 
-/**
- * GET /api/campaigns/:id
- * Récupérer une campagne par ID
+/*
+  GET /api/campaigns/:id
+  Récupérer une campagne par ID
  */
+
 export const getCampaignById = async (
   req: Request,
   res: Response,
@@ -142,7 +149,7 @@ export const getCampaignById = async (
       data: campaign,
     });
   } catch (error: any) {
-    console.error("❌ Erreur getCampaignById:", error);
+    console.error("Erreur getCampaignById:", error);
     res.status(500).json({
       success: false,
       message: "Erreur lors de la récupération de la campagne",

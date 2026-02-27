@@ -48,6 +48,8 @@ export interface LeadFilters {
   smsEnvoye?: "all" | "yes" | "no";
   emailEnvoye?: "all" | "yes" | "no";
   search?: string;
+  departement?: string;
+  region?: string;
 }
 
 export interface DashboardStats {
@@ -85,7 +87,16 @@ export interface Template {
   variables: string[]; // ['nom', 'prenom', 'ref']
   createdAt?: Date;
   updatedAt?: Date;
-  usageCount?: number; // Nombre de fois utilisé
+  usageCount?: number;
+  ctaText?: string;
+  ctaUrl?: string;
+  attachment?: {
+    filename: string;
+    path: string;
+    url: string;
+    size: number;
+    mimetype: string;
+  };
 }
 
 export interface TemplateFormData {
@@ -93,6 +104,30 @@ export interface TemplateFormData {
   type: "sms" | "email";
   subject?: string;
   content: string;
+  ctaText?: string;
+  ctaUrl?: string;
+  attachment?: {
+    filename: string;
+    path: string;
+    url: string;
+    size: number;
+    mimetype: string;
+  };
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: "admin" | "user";
+}
+
+export interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  isAdmin: boolean;
 }
 
 export interface Campaign {
@@ -125,4 +160,45 @@ export interface WizardStep {
   title: string;
   description: string;
   isComplete: boolean;
+}
+
+export interface SequenceStep {
+  stepNumber: number;
+  type: "sms" | "email";
+  templateId: string;
+  delayDays: number;
+}
+
+export interface SequenceRecipient {
+  leadId: string;
+  leadRef: string;
+  status: "pending" | "in_progress" | "completed" | "stopped";
+  currentStep: number;
+  nextActionAt?: Date;
+  stepsCompleted: Array<{
+    stepNumber: number;
+    completedAt: Date;
+    success: boolean;
+    error?: string;
+  }>;
+  enrolledAt: Date;
+  completedAt?: Date;
+  stoppedAt?: Date;
+  stopReason?: string;
+}
+
+export interface SequenceCampaign {
+  _id?: string;
+  name: string;
+  steps: SequenceStep[];
+  recipients: SequenceRecipient[];
+  recipientsCount: number;
+  activeCount: number;
+  completedCount: number;
+  stoppedCount: number;
+  status: "draft" | "active" | "completed";
+  startedAt?: Date;
+  completedAt?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

@@ -58,7 +58,7 @@ export default function TemplatesPage() {
     return matchesType && matchesSearch;
   });
 
-  // ✅ Sauvegarder (create ou update)
+  //  Sauvegarder (create ou update)
   const handleSave = async (data: TemplateFormData) => {
     try {
       if (editingTemplate) {
@@ -74,7 +74,7 @@ export default function TemplatesPage() {
             "Template modifié",
             "Le template a été modifié avec succès",
           );
-          await loadTemplates(); // Recharger
+          await loadTemplates();
         } else {
           showToast("error", "Erreur", response.message);
         }
@@ -88,7 +88,7 @@ export default function TemplatesPage() {
             "Template créé",
             "Le template a été créé avec succès",
           );
-          await loadTemplates(); // Recharger
+          await loadTemplates();
         } else {
           showToast("error", "Erreur", response.message);
         }
@@ -97,7 +97,7 @@ export default function TemplatesPage() {
       setEditingTemplate(undefined);
       setIsModalOpen(false);
     } catch (error: any) {
-      console.error("❌ Erreur handleSave:", error);
+      console.error("Erreur handleSave:", error);
       showToast(
         "error",
         "Erreur",
@@ -116,7 +116,7 @@ export default function TemplatesPage() {
     setIsConfirmOpen(true);
   };
 
-  // ✅ Confirmer la suppression
+  // Confirmer la suppression
   const confirmDelete = async () => {
     if (!deleteId) return;
 
@@ -134,7 +134,7 @@ export default function TemplatesPage() {
         showToast("error", "Erreur", response.message);
       }
     } catch (error: any) {
-      console.error("❌ Erreur confirmDelete:", error);
+      console.error("Erreur confirmDelete:", error);
       showToast(
         "error",
         "Erreur",
@@ -146,7 +146,7 @@ export default function TemplatesPage() {
     }
   };
 
-  // ✅ Loader pendant le chargement
+  // Loader pendant le chargement
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
