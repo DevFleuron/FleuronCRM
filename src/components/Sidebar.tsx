@@ -1,78 +1,69 @@
-"use client";
+'use client'
 
-import React, { useState } from "react";
-import {
-  LayoutDashboard,
-  Send,
-  FileText,
-  History,
-  Users,
-  Settings,
-  ChevronLeft,
-} from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
-import { cn } from "@/src/lib/utils";
+import React, { useState } from 'react'
+import { LayoutDashboard, Send, FileText, History, Users, LogOut, ChevronLeft } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { cn } from '@/src/lib/utils'
 
 const navigation = [
   {
-    id: "dashboard",
-    name: "Dashboard NRP",
+    id: 'dashboard',
+    name: 'Dashboard NRP',
     icon: LayoutDashboard,
-    href: "/dashboard",
+    href: '/dashboard',
   },
   {
-    id: "campaign",
-    name: "Nouvelle Relance",
+    id: 'campaign',
+    name: 'Nouvelle Relance',
     icon: Send,
-    href: "/campaign/new",
+    href: '/campaign/new',
   },
-  { id: "templates", name: "Modèles NRP", icon: FileText, href: "/templates" },
+  { id: 'templates', name: 'Modèles NRP', icon: FileText, href: '/templates' },
   {
-    id: "history",
-    name: "Historique Relances",
+    id: 'history',
+    name: 'Historique Relances',
     icon: History,
-    href: "/campaign/history",
+    href: '/campaign/history',
   },
-  { id: "leads", name: "Leads NRP", icon: Users, href: "/leads" },
-];
+  { id: 'leads', name: 'Leads NRP', icon: Users, href: '/leads' },
+]
 
 interface SidebarProps {
-  isMobileMenuOpen: boolean;
-  onClose: () => void;
+  isMobileMenuOpen: boolean
+  onClose: () => void
 }
 
 export function Sidebar({ isMobileMenuOpen, onClose }: SidebarProps) {
-  const [isOpen, setIsOpen] = useState(true);
-  const pathname = usePathname();
-  const router = useRouter();
+  const [isOpen, setIsOpen] = useState(true)
+  const pathname = usePathname()
+  const router = useRouter()
 
   const handleToggle = (e: React.MouseEvent) => {
-    // Ne pas toggle si on clique sur un bouton de navigation
-    if ((e.target as HTMLElement).closest("button[data-nav-item]")) {
-      return;
+    if ((e.target as HTMLElement).closest('button[data-nav-item]')) {
+      return
     }
-    setIsOpen(!isOpen);
-  };
+    setIsOpen(!isOpen)
+  }
+
+  const handleLogout = () => {
+    // Ajoutez ici votre logique de déconnexion
+    router.push('/login')
+  }
 
   return (
     <>
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black/60 z-40"
-          onClick={onClose}
-        />
+        <div className="lg:hidden fixed inset-0 bg-black/60 z-40" onClick={onClose} />
       )}
 
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 h-full bg-surface-primary border-r border-border-primary transition-all duration-300 z-50 flex flex-col",
-          "lg:translate-x-0",
-          isMobileMenuOpen
-            ? "translate-x-0"
-            : "-translate-x-full lg:translate-x-0",
-          isOpen ? "w-64" : "w-20",
+          'fixed top-0 left-0 h-full bg-surface-primary border-r border-border-primary transition-all duration-300 z-50 flex flex-col',
+          'lg:translate-x-0',
+          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+          isOpen ? 'w-64' : 'w-20'
         )}
       >
         {/* Header - Cliquable sur desktop */}
@@ -90,9 +81,7 @@ export function Sidebar({ isMobileMenuOpen, onClose }: SidebarProps) {
               </span>
             )}
           </div>
-          {isOpen && (
-            <ChevronLeft className="w-5 h-5 text-text-secondary flex-shrink-0" />
-          )}
+          {isOpen && <ChevronLeft className="w-5 h-5 text-text-secondary flex-shrink-0" />}
         </div>
 
         {/* Header - Non cliquable sur mobile */}
@@ -110,47 +99,45 @@ export function Sidebar({ isMobileMenuOpen, onClose }: SidebarProps) {
         {/* Navigation */}
         <nav className="flex-1 px-3 space-y-2 mt-4">
           {navigation.map((item) => {
-            const Icon = item.icon;
-            const isActive =
-              pathname === item.href || pathname?.startsWith(item.href);
+            const Icon = item.icon
+            const isActive = pathname === item.href || pathname?.startsWith(item.href)
 
             return (
               <button
                 key={item.id}
                 data-nav-item
                 onClick={() => {
-                  router.push(item.href);
-                  onClose();
+                  router.push(item.href)
+                  onClose()
                 }}
                 className={cn(
-                  "w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200",
+                  'w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200',
                   isActive
-                    ? "bg-brand-primary/10 text-brand-primary border border-brand-primary/20 shadow-glow"
-                    : "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
+                    ? 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20 shadow-glow'
+                    : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
                 )}
               >
                 <Icon className="w-5 h-5 flex-shrink-0" />
-                {isOpen && (
-                  <span className="font-medium truncate">{item.name}</span>
-                )}
+                {isOpen && <span className="font-medium truncate">{item.name}</span>}
               </button>
-            );
+            )
           })}
         </nav>
 
-        {/* Settings */}
+        {/* Déconnexion */}
         <div className="px-3 pb-6">
           <button
             data-nav-item
+            onClick={handleLogout}
             className={cn(
-              "w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 text-text-secondary hover:bg-surface-hover hover:text-text-primary",
+              'w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 text-text-secondary hover:bg-red-500/10 hover:text-red-400'
             )}
           >
-            <Settings className="w-5 h-5 flex-shrink-0" />
-            {isOpen && <span className="font-medium">Paramètres</span>}
+            <LogOut className="w-5 h-5 flex-shrink-0" />
+            {isOpen && <span className="font-medium">Déconnexion</span>}
           </button>
         </div>
       </aside>
     </>
-  );
+  )
 }
