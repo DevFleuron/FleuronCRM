@@ -2,7 +2,7 @@ import Campaign from "../models/Campaign.model";
 import Lead from "../models/Lead.model";
 import Template from "../models/Template.model";
 import { BrevoService } from "../services/brevo.service";
-import { addCallToAction } from "@/src/templates/email-layout";
+import { addCallToAction } from "@/server/templates/email-layout";
 
 /*
  * Traiter l'envoi d'une campagne
