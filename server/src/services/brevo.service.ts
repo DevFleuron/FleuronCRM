@@ -1,6 +1,6 @@
 import axios from "axios";
 import Lead from "../models/Lead.model";
-import { getEmailTemplate } from "@/server/templates/email-layout";
+import { getEmailTemplate } from "@/server/src/templates/email-layout";
 import fs from "fs";
 import path from "path";
 
