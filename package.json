@@ -9,7 +9,7 @@
     "lint": "next lint",
     "server:dev": "cross-env PORT=5000 NODE_ENV=development nodemon --cwd server --exec tsx src/server.ts",
     "server:build": "tsc --project server/tsconfig.json",
-    "server:start": "cross-env PORT=5000 NODE_ENV=production node server/dist/server.js",
+    "server:start": "cross-env PORT=5000 NODE_ENV=production node server/server.js",
     "format": "prettier --write ."
   },
   "dependencies": {
