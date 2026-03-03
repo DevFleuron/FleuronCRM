@@ -116,11 +116,9 @@ export async function processCampaignSending(campaignId: string) {
           // Mettre à jour le lead
           if (campaign.type === "sms") {
             lead.smsEnvoye = true;
-            lead.brevoStats = lead.brevoStats || {};
             lead.brevoStats.lastSmsSentAt = new Date();
           } else {
             lead.emailEnvoye = true;
-            lead.brevoStats = lead.brevoStats || {};
             lead.brevoStats.lastEmailSentAt = new Date();
           }
           await lead.save();
