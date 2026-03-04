@@ -104,7 +104,6 @@ export default function SequencesPage() {
             variant="primary"
             onClick={() => router.push("/sequences/new")}
           >
-            <Plus className="w-5 h-5" />
             Créer ma première séquence
           </Button>
         </div>

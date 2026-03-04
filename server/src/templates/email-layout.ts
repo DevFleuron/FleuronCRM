@@ -64,7 +64,6 @@ export const getEmailTemplate = (content: string): string => {
                             </div>
 
                             <div style="margin: 20px 0; line-height: 2; font-size: 13px; color: #6b7280;">
-                                 75 rue Jules Guesdes<br>
                                  <a href="tel:3660" style="color: #6b7280; text-decoration: none;">3660</a><br>
                                  <a href="mailto:contact@fleuronindustries.com" style="color: #F5771F; text-decoration: none; font-weight: 600;">contact@fleuronindustries.com</a>
                             </div>

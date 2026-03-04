@@ -6,7 +6,6 @@ import { Search, X, Filter, Upload } from "lucide-react";
 import { Select } from "@/src/components/ui/Select";
 import { DepartementSelect } from "./filters/DepartementSelect";
 import { RegionSelect } from "./filters/RegionSelect";
-import { Input } from "@/src/components/ui/Input";
 import { Button } from "@/src/components/ui/Button";
 import { cn } from "@/src/lib/utils";
 import type { LeadFilters } from "@/src/types";
@@ -37,6 +36,7 @@ export function LeadFiltersBar({
   const [imports, setImports] = useState<{ _id: string; nomFichier: string }[]>(
     [],
   );
+
   useEffect(() => {
     ApiService.getImportHistory().then((res) => {
       if (res.success) setImports(res.data);
@@ -109,7 +109,6 @@ export function LeadFiltersBar({
                 label: opt.label,
               }))}
             />
-
             <Select
               label="Source"
               value={filters.source || ""}
@@ -125,35 +124,34 @@ export function LeadFiltersBar({
               onChange={(e) => handleFilterChange("importId", e.target.value)}
               options={[
                 { value: "", label: "Tous les fichiers" },
-                ...imports.map((i) => ({
-                  value: i._id,
-                  label: i.nomFichier,
-                })),
+                ...imports.map((i) => ({ value: i._id, label: i.nomFichier })),
               ]}
             />
-
-            <div>
-              <label className="block text-xs font-bold text-text-secondary uppercase tracking-wide mb-2 ">
-                Du
-              </label>
-              <input
-                type="date"
-                value={filters.dateFrom || ""}
-                onChange={(e) => handleFilterChange("dateFrom", e.target.value)}
-                className="input-base"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-text-secondary uppercase tracking-wide mb-2">
-                Au
-              </label>
-              <input
-                type="date"
-                value={filters.dateTo || ""}
-                onChange={(e) => handleFilterChange("dateTo", e.target.value)}
-                className="input-base"
-              />
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wide mb-2">
+                  Du
+                </label>
+                <input
+                  type="date"
+                  value={filters.dateFrom || ""}
+                  onChange={(e) =>
+                    handleFilterChange("dateFrom", e.target.value)
+                  }
+                  className="input-base"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wide mb-2">
+                  Au
+                </label>
+                <input
+                  type="date"
+                  value={filters.dateTo || ""}
+                  onChange={(e) => handleFilterChange("dateTo", e.target.value)}
+                  className="input-base"
+                />
+              </div>
             </div>
           </div>
 
@@ -172,14 +170,12 @@ export function LeadFiltersBar({
                 })),
               ]}
             />
-
             <Select
               label="SMS Envoyé"
               value={filters.smsEnvoye || "all"}
               onChange={(e) => handleFilterChange("smsEnvoye", e.target.value)}
               options={SMS_EMAIL_OPTIONS}
             />
-
             <Select
               label="Email Envoyé"
               value={filters.emailEnvoye || "all"}
@@ -188,45 +184,27 @@ export function LeadFiltersBar({
               }
               options={SMS_EMAIL_OPTIONS}
             />
-
-            {/* Département */}
-            <div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <DepartementSelect
-                  value={filters.departement || ""}
-                  onChange={(value) =>
-                    onFiltersChange({
-                      ...filters,
-                      departement: value || undefined,
-                    })
-                  }
-                />
-
-                <RegionSelect
-                  value={filters.region || ""}
-                  onChange={(value) =>
-                    onFiltersChange({ ...filters, region: value || undefined })
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="flex items-end">
-              <Button
-                variant="secondary"
-                size="md"
-                onClick={onReset}
-                className="w-full"
-                disabled={!hasActiveFilters}
-              >
-                <X className="w-4 h-4" />
-                Réinitialiser
-              </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <DepartementSelect
+                value={filters.departement || ""}
+                onChange={(value) =>
+                  onFiltersChange({
+                    ...filters,
+                    departement: value || undefined,
+                  })
+                }
+              />
+              <RegionSelect
+                value={filters.region || ""}
+                onChange={(value) =>
+                  onFiltersChange({ ...filters, region: value || undefined })
+                }
+              />
             </div>
           </div>
 
-          <div className="pt-4 border-t border-border-primary">
-            <div className="relative">
+          <div className="flex items-center gap-4 pt-4 border-t border-border-primary">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
               <input
                 type="text"
@@ -236,6 +214,14 @@ export function LeadFiltersBar({
                 className="input-base pl-10"
               />
             </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onReset}
+              disabled={!hasActiveFilters}
+            >
+              Réinitialiser
+            </Button>
           </div>
         </div>
       )}

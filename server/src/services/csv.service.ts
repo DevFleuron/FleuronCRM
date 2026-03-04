@@ -7,21 +7,33 @@ import { SequenceService } from "./sequence.service";
 import { isLeavingNRP } from "../utils/lead.utils";
 import mongoose from "mongoose";
 
+const VALID_RAPPORTS = [
+  "NOUVEAU PROSPECT",
+  "NRP",
+  "NRP 1",
+  "NRP 2",
+  "NRP 3",
+  "NRP 4",
+  "NRP 5",
+  "CLIENT",
+  "PERDU",
+  "RDV PRIS",
+  "A RAPPELER",
+  "DEVIS ENVOYE",
+  "DEVIS ENVOYE NRP 1",
+  "DEVIS ENVOYE NRP 2",
+  "PROSPECT A RETRAITER",
+  "DOUBLON",
+];
+
 export class CSVService {
-  /*
-    Normaliser les headers 
-   */
   private static normalizeHeader(header: string): string {
     return header.toLowerCase().trim().replace(/\s+/g, "");
   }
 
-  /*
-   Mapper les headers du CSV vers les champs attendus
-   */
   private static mapHeaders(headers: string[]): Map<string, string> {
     const mapping = new Map<string, string>();
 
-    // Mapping des colonnes
     const columnMap: Record<string, string[]> = {
       ref: ["ref", "reference"],
       date: ["date", "datecontact"],
@@ -41,11 +53,8 @@ export class CSVService {
       typeInstallation: ["typeinstallation", "installation", "type"],
     };
 
-    // Pour chaque header du CSV
     headers.forEach((header) => {
       const normalized = this.normalizeHeader(header);
-
-      // Trouver la correspondance
       for (const [targetField, aliases] of Object.entries(columnMap)) {
         if (aliases.includes(normalized)) {
           mapping.set(header, targetField);
@@ -57,25 +66,17 @@ export class CSVService {
     return mapping;
   }
 
-  /*
-  Extraire les données d'une ligne CSV
-   */
   private static extractRowData(
     row: any,
     headerMapping: Map<string, string>,
   ): any {
     const data: any = {};
-
     for (const [csvHeader, targetField] of headerMapping.entries()) {
       data[targetField] = row[csvHeader];
     }
-
     return data;
   }
 
-  /*
-   Valider la structure du CSV
-*/
   static async validateCSV(
     filePath: string,
   ): Promise<{ valid: boolean; message: string }> {
@@ -100,12 +101,8 @@ export class CSVService {
         .on("data", () => {
           if (firstRow) {
             firstRow = false;
-
-            // Créer le mapping
             const headerMapping = this.mapHeaders(headers);
             const mappedFields = Array.from(headerMapping.values());
-
-            // Vérifier les champs obligatoires
             const missingFields = requiredFields.filter(
               (field) => !mappedFields.includes(field),
             );
@@ -116,10 +113,7 @@ export class CSVService {
                 message: `Colonnes manquantes: ${missingFields.join(", ")}`,
               });
             } else {
-              resolve({
-                valid: true,
-                message: "CSV valide",
-              });
+              resolve({ valid: true, message: "CSV valide" });
             }
           }
         })
@@ -132,13 +126,9 @@ export class CSVService {
     });
   }
 
-  /*
-   Importer le CSV avec UPSERT
-   */
   static async importCSV(filePath: string, nomFichier: string) {
     const startTime = Date.now();
 
-    // Créer l'historique d'import
     const importHistory = await ImportHistory.create({
       nomFichier,
       nombreLeads: 0,
@@ -151,153 +141,149 @@ export class CSVService {
       changes: [],
     });
 
-    const stats = {
-      total: 0,
-      nouveaux: 0,
-      misesAJour: 0,
-      echecs: 0,
-    };
-
+    const stats = { total: 0, nouveaux: 0, misesAJour: 0, echecs: 0 };
     const erreurs: string[] = [];
     const changes: any[] = [];
+    const pendingRows: Promise<void>[] = [];
     let headerMapping: Map<string, string> | null = null;
 
     return new Promise((resolve, reject) => {
       fs.createReadStream(filePath)
         .pipe(csv({ separator: ";" }))
         .on("headers", (headers) => {
-          // Créer le mapping au premier passage
           headerMapping = this.mapHeaders(headers);
           console.log(
             "Mapping des colonnes:",
             Object.fromEntries(headerMapping),
           );
         })
-        .on("data", async (row) => {
-          stats.total++;
+        .on("data", (row) => {
+          const rowPromise = (async () => {
+            stats.total++;
 
-          try {
-            if (!headerMapping) {
-              throw new Error("Header mapping non initialisé");
-            }
+            try {
+              if (!headerMapping)
+                throw new Error("Header mapping non initialisé");
 
-            // Extraire les données avec le mapping
-            const mappedData = this.extractRowData(row, headerMapping);
+              const mappedData = this.extractRowData(row, headerMapping);
 
-            // Parser la date
-            const dateMatch = mappedData.date?.match(
-              /(\d{2})\/(\d{2})\/(\d{4})/,
-            );
-            let parsedDate = new Date();
-            if (dateMatch) {
-              const [, day, month, year] = dateMatch;
-              parsedDate = new Date(`${year}-${month}-${day}`);
-            }
-
-            // Préparer les données du lead
-            const leadData = {
-              ref: mappedData.ref?.trim(),
-              date: parsedDate,
-              heure: mappedData.heure?.trim() || "00:00",
-              nom: mappedData.nom?.trim().toUpperCase(),
-              prenom: mappedData.prenom?.trim(),
-              mobile:
-                mappedData.mobile?.trim() || mappedData.telephone?.trim() || "",
-              email: mappedData.email?.trim().toLowerCase() || "",
-              adresse: mappedData.adresse?.trim() || "",
-              codePostal: mappedData.codePostal?.trim(),
-              source: mappedData.source?.trim(),
-              telepro: mappedData.telepro?.trim() || "",
-              equipe: mappedData.equipe?.trim() || "",
-              rapport: mappedData.rapport?.trim() || "",
-              observation: mappedData.observation?.trim() || "",
-              typeInstallation: mappedData.typeInstallation?.trim() || "",
-            };
-
-            // Valider les champs requis
-            const missingFields = [];
-            if (!leadData.ref) missingFields.push("ref");
-            if (!leadData.nom) missingFields.push("nom");
-            if (!leadData.prenom) missingFields.push("prenom");
-
-            if (missingFields.length > 0) {
-              const errorMsg = `Ligne ${stats.total}: Champs manquants (${missingFields.join(", ")})`;
-              console.log(`${errorMsg}`);
-              console.log(`   Données reçues:`, {
-                ref: mappedData.ref,
-                nom: mappedData.nom,
-                prenom: mappedData.prenom,
-                mobile: mappedData.mobile,
-                email: mappedData.email,
-              });
-              erreurs.push(errorMsg);
-              stats.echecs++;
-              return;
-            }
-            //UPSERT : Chercher par ref
-            const existingLead = await Lead.findOne({ ref: leadData.ref });
-
-            if (existingLead) {
-              //LEAD EXISTE → UPDATE
-              const oldStatus = existingLead.rapport;
-
-              const hasChanged = await this.updateLeadAndDetectChanges(
-                existingLead,
-                leadData,
-                importHistory._id,
-                changes,
+              const dateMatch = mappedData.date?.match(
+                /(\d{2})\/(\d{2})\/(\d{4})/,
               );
+              let parsedDate = new Date();
+              if (dateMatch) {
+                const [, day, month, year] = dateMatch;
+                parsedDate = new Date(`${year}-${month}-${day}`);
+              }
 
-              if (hasChanged) {
-                stats.misesAJour++;
+              const rawRapport = mappedData.rapport?.trim() || "";
+              const rapport = VALID_RAPPORTS.includes(rawRapport)
+                ? rawRapport
+                : "NOUVEAU PROSPECT";
 
-                // Vérifier si le statut a changé
-                const statusChanged = oldStatus !== leadData.rapport;
+              if (!VALID_RAPPORTS.includes(rawRapport)) {
+                console.log(
+                  `Rapport invalide "${rawRapport}" → remplacé par "NOUVEAU PROSPECT"`,
+                );
+              }
 
-                if (statusChanged) {
-                  console.log(
-                    `Statut changé: ${oldStatus} → ${leadData.rapport}`,
-                  );
+              const leadData = {
+                ref: mappedData.ref?.trim(),
+                date: parsedDate,
+                heure: mappedData.heure?.trim() || "00:00",
+                nom: mappedData.nom?.trim().toUpperCase(),
+                prenom: mappedData.prenom?.trim(),
+                mobile:
+                  mappedData.mobile?.trim() ||
+                  mappedData.telephone?.trim() ||
+                  "",
+                email: mappedData.email?.trim().toLowerCase() || "",
+                adresse: mappedData.adresse?.trim() || "",
+                codePostal: mappedData.codePostal?.trim(),
+                source: mappedData.source?.trim(),
+                telepro: mappedData.telepro?.trim() || "",
+                equipe: mappedData.equipe?.trim() || "",
+                rapport,
+                observation: mappedData.observation?.trim() || "",
+                typeInstallation: mappedData.typeInstallation?.trim() || "",
+              };
 
-                  // Arrêter les séquences si le lead n'est plus NRP
-                  if (leadData.rapport !== "NRP") {
-                    await SequenceService.checkAndStopSequences(
-                      existingLead._id.toString(),
-                      leadData.rapport,
+              const missingFields = [];
+              if (!leadData.ref) missingFields.push("ref");
+              if (!leadData.nom) missingFields.push("nom");
+              if (!leadData.prenom) missingFields.push("prenom");
+
+              if (missingFields.length > 0) {
+                const errorMsg = `Ligne ${stats.total}: Champs manquants (${missingFields.join(", ")})`;
+                console.log(errorMsg);
+                erreurs.push(errorMsg);
+                stats.echecs++;
+                return;
+              }
+
+              const existingLead = await Lead.findOne({ ref: leadData.ref });
+
+              if (existingLead) {
+                const oldStatus = existingLead.rapport;
+
+                const hasChanged = await this.updateLeadAndDetectChanges(
+                  existingLead,
+                  leadData,
+                  importHistory._id,
+                  changes,
+                );
+
+                if (hasChanged) {
+                  stats.misesAJour++;
+
+                  const statusChanged = oldStatus !== leadData.rapport;
+                  if (statusChanged) {
+                    console.log(
+                      `Statut changé: ${oldStatus} → ${leadData.rapport}`,
                     );
+                    if (leadData.rapport !== "NRP") {
+                      await SequenceService.checkAndStopSequences(
+                        existingLead._id.toString(),
+                        leadData.rapport,
+                      );
+                    }
                   }
                 }
+              } else {
+                await Lead.create({
+                  ...leadData,
+                  importedAt: new Date(),
+                  lastImportedAt: new Date(),
+                  lastImportId: importHistory._id,
+                  importCount: 1,
+                  statusHistory: [
+                    {
+                      newStatus: leadData.rapport,
+                      changedAt: new Date(),
+                      importId: importHistory._id,
+                      source: "import",
+                    },
+                  ],
+                });
+                stats.nouveaux++;
               }
-            } else {
-              //NOUVEAU LEAD → INSERT
-              await Lead.create({
-                ...leadData,
-                importedAt: new Date(),
-                lastImportedAt: new Date(),
-                lastImportId: importHistory._id,
-                importCount: 1,
-                statusHistory: [
-                  {
-                    newStatus: leadData.rapport,
-                    changedAt: new Date(),
-                    importId: importHistory._id,
-                    source: "import",
-                  },
-                ],
-              });
-              stats.nouveaux++;
+            } catch (error: any) {
+              console.error(`Erreur ligne ${stats.total}:`, error.message);
+              erreurs.push(`Ligne ${stats.total}: ${error.message}`);
+              stats.echecs++;
             }
-          } catch (error: any) {
-            console.error(`Erreur ligne ${stats.total}:`, error.message);
-            erreurs.push(`Ligne ${stats.total}: ${error.message}`);
-            stats.echecs++;
-          }
+          })();
+
+          pendingRows.push(rowPromise);
         })
         .on("end", async () => {
           try {
+            await Promise.all(pendingRows);
+
+            console.log("Stats finales:", stats);
+
             const processingTime = (Date.now() - startTime) / 1000;
 
-            // Finaliser l'historique
             await ImportHistory.updateOne(
               { _id: importHistory._id },
               {
@@ -334,9 +320,6 @@ export class CSVService {
     });
   }
 
-  /*
-   * Détecter les changements et mettre à jour le lead
-   */
   private static async updateLeadAndDetectChanges(
     existingLead: any,
     newData: any,
@@ -357,7 +340,6 @@ export class CSVService {
       if (existingLead[field] !== newData[field]) {
         hasChanged = true;
 
-        // CHANGEMENT DE STATUT CRITIQUE
         if (field === "rapport") {
           const oldStatus = existingLead.rapport;
           const newStatus = newData.rapport;
@@ -366,7 +348,6 @@ export class CSVService {
             `Changement statut Lead ${existingLead.ref}: ${oldStatus} → ${newStatus}`,
           );
 
-          // Si le lead sort du statut NRP → Retirer des campagnes
           if (isLeavingNRP(oldStatus, newStatus)) {
             await this.removeLeadFromActiveCampaigns(
               existingLead._id,
@@ -400,19 +381,17 @@ export class CSVService {
             });
           }
 
-          // Ajouter à l'historique
           existingLead.statusHistory.push({
-            oldStatus: oldStatus,
-            newStatus: newStatus,
+            oldStatus,
+            newStatus,
             changedAt: new Date(),
-            importId: importId,
+            importId,
             source: "import",
           });
         }
       }
     }
 
-    // Mettre à jour le lead
     if (hasChanged) {
       Object.assign(existingLead, newData);
       existingLead.lastImportedAt = new Date();
@@ -424,9 +403,6 @@ export class CSVService {
     return hasChanged;
   }
 
-  /*
-  Retirer un lead de toutes les campagnes actives
-   */
   private static async removeLeadFromActiveCampaigns(
     leadId: mongoose.Types.ObjectId,
     importId: mongoose.Types.ObjectId,
@@ -458,7 +434,6 @@ export class CSVService {
           oldStatus,
           newStatus,
         };
-
         campaign.removedCount = (campaign.removedCount || 0) + 1;
         await campaign.save();
       }
