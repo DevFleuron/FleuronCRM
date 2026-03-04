@@ -26,32 +26,40 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
+// app.use(
+//   cors({
+//     origin: (origin, callback) => {
+//       const allowedOrigins = [
+//         "http://localhost:3000",
+//         "http://127.0.0.1:3000",
+//         "http://192.168.1.128:3000",
+//         "https://crm.fleuronindustries.fr",
+//       ];
+
+//       // Autoriser les requêtes sans origin (comme Postman)
+//       if (!origin) return callback(null, true);
+
+//       if (allowedOrigins.includes(origin)) {
+//         callback(null, true);
+//       } else {
+//         console.warn("⚠️ CORS bloqué pour:", origin);
+//         callback(null, process.env.NODE_ENV === "development");
+//       }
+//     },
+//     credentials: true, //  Important pour les cookies
+//     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+//     allowedHeaders: ["Content-Type", "Authorization"],
+//   }),
+// );
+
 app.use(
   cors({
-    origin: (origin, callback) => {
-      const allowedOrigins = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://192.168.1.128:3000",
-        "https://crm.fleuronindustries.fr",
-      ];
-
-      // Autoriser les requêtes sans origin (comme Postman)
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.warn("⚠️ CORS bloqué pour:", origin);
-        callback(null, process.env.NODE_ENV === "development");
-      }
-    },
-    credentials: true, //  Important pour les cookies
+    origin: true,
+    credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

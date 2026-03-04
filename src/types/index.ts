@@ -31,6 +31,7 @@ export interface Lead {
     | "DOUBLON";
   observation: string;
   typeInstallation: string;
+  lastImportId?: string;
 
   smsEnvoye: boolean;
   smsSentAt?: Date;
@@ -143,7 +144,7 @@ export interface Campaign {
   name: string;
   type: "sms" | "email";
   templateId: string;
-  recipients: string[]; // IDs des leads
+  recipients: string[];
   recipientsCount: number;
   sentCount: number;
   failedCount: number;

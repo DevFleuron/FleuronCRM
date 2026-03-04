@@ -14,9 +14,9 @@ export default function NewCampaignPage() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<LeadFilters>({});
 
-  const loadData = async (importId?: string) => {
+  const loadData = async (importId?: string, showLoader = true) => {
     try {
-      setLoading(true);
+      if (showLoader) setLoading(true);
       const [leadsResponse, templatesResponse] = await Promise.all([
         ApiService.getLeads(importId ? { importId } : {}),
         ApiService.getTemplates(),
@@ -26,16 +26,17 @@ export default function NewCampaignPage() {
     } catch (error: any) {
       showToast("error", "Erreur", "Impossible de charger les données");
     } finally {
-      setLoading(false);
+      if (showLoader) setLoading(false);
     }
   };
 
   useEffect(() => {
     loadData();
   }, []);
-
   useEffect(() => {
-    loadData(filters.importId);
+    if (filters.importId !== undefined) {
+      loadData(filters.importId, false);
+    }
   }, [filters.importId]);
 
   const filteredLeads = useMemo(() => {
