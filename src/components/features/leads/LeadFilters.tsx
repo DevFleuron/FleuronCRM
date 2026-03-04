@@ -133,7 +133,7 @@ export function LeadFiltersBar({
             />
 
             <div>
-              <label className="block text-xs font-bold text-text-secondary uppercase tracking-wide mb-2">
+              <label className="block text-xs font-bold text-text-secondary uppercase tracking-wide mb-2 ">
                 Du
               </label>
               <input

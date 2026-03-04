@@ -33,7 +33,6 @@ export const RAPPORT_OPTIONS = [
   },
   { value: "DOUBLON", label: "Doublon", color: "error" as const },
 ];
-FileList;
 
 export const SOURCE_OPTIONS = [
   "2D CONSULTING",
