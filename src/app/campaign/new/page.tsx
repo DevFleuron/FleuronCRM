@@ -14,54 +14,43 @@ export default function NewCampaignPage() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<LeadFilters>({});
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = async (importId?: string) => {
     try {
       setLoading(true);
-
       const [leadsResponse, templatesResponse] = await Promise.all([
-        ApiService.getLeads({ rapport: "NRP" }),
+        ApiService.getLeads(importId ? { importId } : {}),
         ApiService.getTemplates(),
       ]);
-
-      if (leadsResponse.success) {
-        setAllLeads(leadsResponse.data);
-        console.log(`${leadsResponse.data.length} leads NRP chargés`);
-      }
-
-      if (templatesResponse.success) {
-        setTemplates(templatesResponse.data);
-        console.log(`${templatesResponse.data.length} templates chargés`);
-      }
+      if (leadsResponse.success) setAllLeads(leadsResponse.data);
+      if (templatesResponse.success) setTemplates(templatesResponse.data);
     } catch (error: any) {
-      console.error("Erreur loadData:", error);
       showToast("error", "Erreur", "Impossible de charger les données");
     } finally {
       setLoading(false);
     }
   };
 
-  // Filtrage côté client
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    loadData(filters.importId);
+  }, [filters.importId]);
+
   const filteredLeads = useMemo(() => {
     return allLeads.filter((lead) => {
-      // Filtre par département
+      if (filters.rapport && lead.rapport !== filters.rapport) return false;
       if (filters.departement) {
         const codePostal = (lead.codePostal || "").trim();
         if (!codePostal.startsWith(filters.departement)) return false;
       }
-
-      // Filtre par région
       if (filters.region) {
         const departements = getDepartementsFromRegion(filters.region);
         const codePostal = (lead.codePostal || "").trim();
         const dept = codePostal.substring(0, 2);
         if (!departements.includes(dept)) return false;
       }
-
-      // Autres filtres
       if (filters.source && lead.source !== filters.source) return false;
       if (
         filters.typeInstallation &&
@@ -76,25 +65,23 @@ export default function NewCampaignPage() {
       if (filters.smsEnvoye === "no" && lead.smsEnvoye) return false;
       if (filters.emailEnvoye === "yes" && !lead.emailEnvoye) return false;
       if (filters.emailEnvoye === "no" && lead.emailEnvoye) return false;
-
       if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
+        const s = filters.search.toLowerCase();
         return (
-          lead.nom?.toLowerCase().includes(searchLower) ||
-          lead.prenom?.toLowerCase().includes(searchLower) ||
-          lead.email?.toLowerCase().includes(searchLower) ||
-          lead.mobile?.includes(searchLower) ||
-          lead.ref?.includes(searchLower)
+          lead.nom?.toLowerCase().includes(s) ||
+          lead.prenom?.toLowerCase().includes(s) ||
+          lead.email?.toLowerCase().includes(s) ||
+          lead.mobile?.includes(s) ||
+          lead.ref?.includes(s)
         );
       }
-
       return true;
     });
   }, [allLeads, filters]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-100">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-slate-400">Chargement des données...</p>
@@ -113,7 +100,6 @@ export default function NewCampaignPage() {
           Créez une campagne de relance SMS ou Email
         </p>
       </div>
-
       <CampaignWizard
         leads={filteredLeads}
         templates={templates}

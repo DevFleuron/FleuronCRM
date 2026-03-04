@@ -221,38 +221,28 @@ export default function NewSequencePage() {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = async (importId?: string) => {
     try {
       setLoading(true);
-
       const [leadsResponse, templatesResponse] = await Promise.all([
-        ApiService.getLeads(),
+        ApiService.getLeads(importId ? { importId } : {}),
         ApiService.getTemplates(),
       ]);
-
-      if (leadsResponse.success) {
-        const nrpLeads = leadsResponse.data.filter(
-          (lead: Lead) =>
-            lead.rapport === "NRP" ||
-            lead.rapport === "NRP 1" ||
-            lead.rapport === "NRP 2" ||
-            lead.rapport === "NRP 3" ||
-            lead.rapport === "NRP 4" ||
-            lead.rapport === "NRP 5",
-        );
-        setLeads(nrpLeads);
-      }
-
-      if (templatesResponse.success) {
-        setTemplates(templatesResponse.data);
-      }
+      if (leadsResponse.success) setLeads(leadsResponse.data);
+      if (templatesResponse.success) setTemplates(templatesResponse.data);
     } catch (error: any) {
-      console.error("Erreur loadData:", error);
       showToast("error", "Erreur", "Impossible de charger les données");
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+  useEffect(() => {
+    loadData(filters.importId);
+  }, [filters.importId]);
 
   // Filtrage côté client
   const filteredLeads = useMemo(() => {
@@ -262,6 +252,7 @@ export default function NewSequencePage() {
         const codePostal = (lead.codePostal || "").trim();
         if (!codePostal.startsWith(filters.departement)) return false;
       }
+      if (filters.rapport && lead.rapport !== filters.rapport) return false;
 
       // Filtre par région
       if (filters.region) {
@@ -499,7 +490,7 @@ export default function NewSequencePage() {
       <div className="bg-[#111114] border border-slate-800 rounded-2xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold">
-            Leads NRP ({selectedLeadIds.length} / {filteredLeads.length})
+            Leads ({selectedLeadIds.length} / {filteredLeads.length})
           </h2>
         </div>
 
@@ -508,7 +499,6 @@ export default function NewSequencePage() {
           filters={filters}
           onFiltersChange={setFilters}
           onReset={() => setFilters({})}
-          onImport={() => {}}
           resultsCount={filteredLeads.length}
         />
 

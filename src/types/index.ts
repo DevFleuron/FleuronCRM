@@ -17,11 +17,18 @@ export interface Lead {
     | "NRP"
     | "NRP 1"
     | "NRP 2"
-    | "NRP 2"
     | "NRP 3"
     | "NRP 4"
     | "NRP 5"
-    | "DEVIS ENVOYE";
+    | "CLIENT"
+    | "PERDU"
+    | "RDV PRIS"
+    | "A RAPPELER"
+    | "DEVIS ENVOYE"
+    | "DEVIS ENVOYE NRP 1"
+    | "DEVIS ENVOYE NRP 2"
+    | "PROSPECT A RETRAITER"
+    | "DOUBLON";
   observation: string;
   typeInstallation: string;
 
@@ -50,6 +57,7 @@ export interface LeadFilters {
   search?: string;
   departement?: string;
   region?: string;
+  importId?: string;
 }
 
 export interface DashboardStats {

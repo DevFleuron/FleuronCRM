@@ -110,9 +110,8 @@ export function WizardStep1({
       {/* Filters */}
       <LeadFiltersBar
         filters={filters}
-        onFiltersChange={onFiltersChange} // ✅ Utiliser la prop
-        onReset={() => onFiltersChange({})} // ✅ Utiliser la prop
-        onImport={() => {}}
+        onFiltersChange={onFiltersChange}
+        onReset={() => onFiltersChange({})}
         resultsCount={filteredLeads.length}
       />
 

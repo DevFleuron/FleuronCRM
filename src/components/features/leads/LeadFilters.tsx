@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useEffect, useState } from "react";
 import { Search, X, Filter, Upload } from "lucide-react";
 import { Select } from "@/src/components/ui/Select";
 import { DepartementSelect } from "./filters/DepartementSelect";
@@ -15,12 +16,13 @@ import {
   TYPE_INSTALLATION_OPTIONS,
   SMS_EMAIL_OPTIONS,
 } from "@/src/lib/constants";
+import { ApiService } from "@/src/lib/api";
 
 interface LeadFiltersProps {
   filters: LeadFilters;
   onFiltersChange: (filters: LeadFilters) => void;
   onReset: () => void;
-  onImport: () => void;
+  onImport?: () => void;
   resultsCount: number;
 }
 
@@ -32,6 +34,14 @@ export function LeadFiltersBar({
   resultsCount,
 }: LeadFiltersProps) {
   const [isExpanded, setIsExpanded] = React.useState(false);
+  const [imports, setImports] = useState<{ _id: string; nomFichier: string }[]>(
+    [],
+  );
+  useEffect(() => {
+    ApiService.getImportHistory().then((res) => {
+      if (res.success) setImports(res.data);
+    });
+  }, []);
 
   const handleFilterChange = (key: keyof LeadFilters, value: string) => {
     onFiltersChange({ ...filters, [key]: value });
@@ -57,10 +67,12 @@ export function LeadFiltersBar({
           <span className="text-sm text-text-secondary">
             {resultsCount} résultat{resultsCount > 1 ? "s" : ""}
           </span>
-          <Button variant="secondary" size="sm" onClick={onImport}>
-            <Upload className="w-4 h-4" />
-            Importer CSV
-          </Button>
+          {onImport && (
+            <Button variant="secondary" size="sm" onClick={onImport}>
+              <Upload className="w-4 h-4" />
+              Importer CSV
+            </Button>
+          )}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="p-2 hover:bg-surface-hover rounded-lg transition-colors"
@@ -105,6 +117,18 @@ export function LeadFiltersBar({
               options={[
                 { value: "", label: "Toutes les sources" },
                 ...SOURCE_OPTIONS.map((s) => ({ value: s, label: s })),
+              ]}
+            />
+            <Select
+              label="Fichier d'import"
+              value={filters.importId || ""}
+              onChange={(e) => handleFilterChange("importId", e.target.value)}
+              options={[
+                { value: "", label: "Tous les fichiers" },
+                ...imports.map((i) => ({
+                  value: i._id,
+                  label: i.nomFichier,
+                })),
               ]}
             />
 

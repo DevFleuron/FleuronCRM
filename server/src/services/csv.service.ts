@@ -274,6 +274,7 @@ export class CSVService {
                 ...leadData,
                 importedAt: new Date(),
                 lastImportedAt: new Date(),
+                lastImportId: importHistory._id,
                 importCount: 1,
                 statusHistory: [
                   {
@@ -415,6 +416,7 @@ export class CSVService {
     if (hasChanged) {
       Object.assign(existingLead, newData);
       existingLead.lastImportedAt = new Date();
+      existingLead.lastImportId = importId;
       existingLead.importCount = (existingLead.importCount || 0) + 1;
       await existingLead.save();
     }

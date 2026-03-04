@@ -19,6 +19,7 @@ export const getLeads = async (req: Request, res: Response): Promise<void> => {
       search,
       departement,
       region,
+      importId,
       limit = 50,
       skip = 0,
     } = req.query;
@@ -29,6 +30,7 @@ export const getLeads = async (req: Request, res: Response): Promise<void> => {
     if (rapport) filter.rapport = rapport;
     if (source) filter.source = source;
     if (typeInstallation) filter.typeInstallation = typeInstallation;
+    if (importId) filter.lastImportId = importId;
 
     // Filtres dates
     if (dateFrom || dateTo) {

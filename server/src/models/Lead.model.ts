@@ -64,6 +64,7 @@ export interface ILead {
     | "DEVIS ENVOYE";
   observation?: string;
   typeInstallation?: string;
+  lastImportId?: mongoose.Types.ObjectId;
 
   // Gestion des SMS
 
@@ -164,11 +165,19 @@ const LeadSchema: Schema = new Schema<ILeadDocument>(
       enum: [
         "NOUVEAU PROSPECT",
         "NRP",
+        "NRP 1",
+        "NRP 2",
+        "NRP 3",
+        "NRP 4",
+        "NRP 5",
         "CLIENT",
         "PERDU",
         "RDV PRIS",
         "A RAPPELER",
         "DEVIS ENVOYE",
+        "DEVIS ENVOYE NRP 1",
+        "DEVIS ENVOYE NRP 2",
+        "PROSPECT A RETRAITER",
         "DOUBLON",
       ],
       required: true,
@@ -183,6 +192,11 @@ const LeadSchema: Schema = new Schema<ILeadDocument>(
       type: String,
       default: "",
       trim: true,
+    },
+
+    lastImportId: {
+      type: Schema.Types.ObjectId,
+      ref: "ImportHistory",
     },
 
     // Gestion des SMS
