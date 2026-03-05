@@ -83,6 +83,10 @@ export class BrevoService {
         to: [{ email: to }],
         subject,
         htmlContent,
+        replyTo: {
+          email: process.env.BREVO_REPLY_TO_EMAIL || BREVO_SENDER_EMAIL,
+          name: BREVO_SENDER_NAME,
+        },
       };
 
       // Ajouter la pièce jointe si présente
@@ -133,7 +137,7 @@ export class BrevoService {
     }
   }
 
-  /**
+  /*
    * Remplacer les variables dans le template
    */
   static replaceVariables(content: string, lead: any): string {

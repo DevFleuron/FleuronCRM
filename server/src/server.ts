@@ -46,7 +46,7 @@ app.use(
         callback(null, process.env.NODE_ENV === "development");
       }
     },
-    credentials: true, //  Important pour les cookies
+    credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
