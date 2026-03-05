@@ -22,7 +22,10 @@ export const handleBrevoWebhook = async (
       if (lead) await updateCampaignStats(lead._id, "delivered", "email");
     }
 
-    if (event.event === "opened" && event.email) {
+    if (
+      (event.event === "opened" || event.event === "unique_opened") &&
+      event.email
+    ) {
       const lead = await Lead.findOneAndUpdate(
         { email: event.email },
         {
@@ -37,7 +40,10 @@ export const handleBrevoWebhook = async (
       if (lead) await updateCampaignStats(lead._id, "opened", "email");
     }
 
-    if (event.event === "click" && event.email) {
+    if (
+      (event.event === "click" || event.event === "unique_click") &&
+      event.email
+    ) {
       const lead = await Lead.findOneAndUpdate(
         { email: event.email },
         {
