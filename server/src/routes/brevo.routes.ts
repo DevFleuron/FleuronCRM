@@ -9,5 +9,6 @@ const router = express.Router();
  * @note    Cette route doit être accessible publiquement (pas d'auth)
  */
 router.post("/brevo", handleBrevoWebhook);
+router.post("/brevo-sms", handleBrevoWebhook);
 
 export default router;
