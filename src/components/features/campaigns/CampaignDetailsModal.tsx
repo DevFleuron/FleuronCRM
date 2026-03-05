@@ -174,8 +174,67 @@ export function CampaignDetailsModal({
                   }}
                 />
               </div>
-            </div>
+            </div>{" "}
           </div>
+          {/* Stats Brevo */}
+          {campaign.status === "sent" && (
+            <div>
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                {campaign.type === "email" ? (
+                  <Mail className="w-5 h-5 text-indigo-400" />
+                ) : (
+                  <MessageSquare className="w-5 h-5 text-purple-400" />
+                )}
+                Stats Brevo
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-indigo-400">
+                    {campaign.brevoStats?.delivered || 0}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">Délivrés</p>
+                </div>
+
+                {campaign.type === "email" && (
+                  <>
+                    <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+                      <p className="text-2xl font-bold text-success">
+                        {campaign.brevoStats?.opened || 0}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">Ouverts</p>
+                      <p className="text-xs text-indigo-400 font-bold mt-1">
+                        {campaign.brevoStats?.openRate || 0}%
+                      </p>
+                    </div>
+
+                    <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+                      <p className="text-2xl font-bold text-warning">
+                        {campaign.brevoStats?.clicked || 0}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">Clics</p>
+                      <p className="text-xs text-indigo-400 font-bold mt-1">
+                        {campaign.brevoStats?.clickRate || 0}%
+                      </p>
+                    </div>
+
+                    <div className="bg-slate-900 border border-error/20 rounded-xl p-4 text-center">
+                      <p className="text-2xl font-bold text-error">
+                        {campaign.brevoStats?.bounced || 0}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">Bounces</p>
+                    </div>
+                  </>
+                )}
+
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-warning">
+                    {campaign.removedCount || 0}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">Retirés</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Additional Info */}
           {campaign.scheduledAt && (

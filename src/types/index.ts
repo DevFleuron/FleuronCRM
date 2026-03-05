@@ -148,11 +148,21 @@ export interface Campaign {
   recipientsCount: number;
   sentCount: number;
   failedCount: number;
-  status: "draft" | "sending" | "sent" | "failed";
+  deliveredCount: number;
+  removedCount: number;
+  status: "draft" | "sending" | "sent" | "failed" | "scheduled";
   scheduledAt?: Date;
   sentAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
+  brevoStats: {
+    delivered: number;
+    opened: number;
+    clicked: number;
+    bounced: number;
+    openRate: number;
+    clickRate: number;
+  };
 }
 
 export interface CampaignFormData {

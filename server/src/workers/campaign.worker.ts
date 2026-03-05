@@ -111,6 +111,7 @@ export async function processCampaignSending(campaignId: string) {
         if (result.success) {
           recipient.status = "sent";
           recipient.sentAt = new Date();
+          recipient.messageId = result.messageId;
           successCount++;
 
           // Mettre à jour le lead

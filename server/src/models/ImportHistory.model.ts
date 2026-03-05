@@ -82,6 +82,7 @@ const ImportHistorySchema: Schema = new Schema(
       type: [
         {
           leadRef: { type: String, required: true },
+          leadName: { type: String },
           leadId: { type: Schema.Types.ObjectId, ref: "Lead", required: true },
           field: { type: String, required: true },
           oldValue: { type: String },

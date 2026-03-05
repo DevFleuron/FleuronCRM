@@ -48,7 +48,11 @@ export class BrevoService {
       );
 
       console.log(`SMS envoyé vers ${to}`);
-      return { success: true, data: response.data };
+      return {
+        success: true,
+        data: response.data,
+        messageId: response.data.messageId || response.data.reference,
+      };
     } catch (error: any) {
       console.error("Erreur envoi SMS:", error.response?.data || error.message);
       return {
@@ -112,7 +116,11 @@ export class BrevoService {
       );
 
       console.log(`✅ Email envoyé vers ${to}`);
-      return { success: true, data: response.data };
+      return {
+        success: true,
+        data: response.data,
+        messageId: response.data.messageId,
+      };
     } catch (error: any) {
       console.error(
         "❌ Erreur envoi Email:",

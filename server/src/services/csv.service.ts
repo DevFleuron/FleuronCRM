@@ -360,6 +360,7 @@ export class CSVService {
               leadRef: existingLead.ref,
               leadId: existingLead._id,
               field: "rapport",
+              leadName: `${existingLead.prenom} ${existingLead.nom}`,
               oldValue: oldStatus,
               newValue: newStatus,
               action: "removed_from_campaigns",
@@ -373,6 +374,7 @@ export class CSVService {
             changes.push({
               leadRef: existingLead.ref,
               leadId: existingLead._id,
+              leadName: `${existingLead.prenom} ${existingLead.nom}`,
               field: "rapport",
               oldValue: oldStatus,
               newValue: newStatus,

@@ -17,6 +17,7 @@ export interface ICampaignRecipient {
     oldStatus?: string;
     newStatus?: string;
   };
+  messageId?: string;
   error?: string;
 }
 
@@ -36,7 +37,15 @@ export interface ICampaign {
   status: "draft" | "scheduled" | "sending" | "sent" | "failed";
   scheduledAt?: Date;
   sentAt?: Date;
-  createdBy?: string; // ID utilisateur
+  createdBy?: string;
+  brevoStats: {
+    delivered: number;
+    opened: number;
+    clicked: number;
+    bounced: number;
+    openRate: number;
+    clickRate: number;
+  };
 }
 
 export interface ICampaignDocument extends ICampaign, Document {}
@@ -87,6 +96,24 @@ const CampaignSchema: Schema = new Schema<ICampaignDocument>(
         },
       ],
       default: [],
+    },
+    brevoStats: {
+      type: {
+        delivered: { type: Number, default: 0 },
+        opened: { type: Number, default: 0 },
+        clicked: { type: Number, default: 0 },
+        bounced: { type: Number, default: 0 },
+        openRate: { type: Number, default: 0 },
+        clickRate: { type: Number, default: 0 },
+      },
+      default: () => ({
+        delivered: 0,
+        opened: 0,
+        clicked: 0,
+        bounced: 0,
+        openRate: 0,
+        clickRate: 0,
+      }),
     },
     recipientsCount: {
       type: Number,

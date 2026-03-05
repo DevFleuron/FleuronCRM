@@ -95,7 +95,7 @@ export default function HistoryPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-100">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-slate-400">Chargement de l'historique...</p>
@@ -266,7 +266,7 @@ export default function HistoryPage() {
                             >
                               <div className="flex items-center justify-between mb-2">
                                 <span className="font-medium text-indigo-400">
-                                  Lead {change.leadRef}
+                                  {change.leadName || `Lead ${change.leadRef}`}
                                 </span>
                                 <span className="text-xs text-slate-500">
                                   {new Date(change.timestamp).toLocaleString(
