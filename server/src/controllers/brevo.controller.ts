@@ -8,7 +8,15 @@ export const handleBrevoWebhook = async (
 ): Promise<void> => {
   try {
     const event = req.body;
-    console.log("Webhook Brevo reçu:", event.event, event.email || event.to);
+    const messageId = event["message-id"] || event.messageId;
+    console.log(
+      "Webhook Brevo reçu:",
+      event.event,
+      event.email || event.to,
+      "messageId:",
+      messageId,
+    );
+    console.log("Webhook event complet:", JSON.stringify(event, null, 2));
 
     if (event.event === "delivered" && event.email) {
       const lead = await Lead.findOneAndUpdate(
@@ -19,13 +27,11 @@ export const handleBrevoWebhook = async (
         },
         { new: true },
       );
-      if (lead) await updateCampaignStats(lead._id, "delivered", "email");
+      if (lead)
+        await updateCampaignStats(lead._id, "delivered", "email", messageId);
     }
 
-    if (
-      (event.event === "opened" || event.event === "unique_opened") &&
-      event.email
-    ) {
+    if (event.event === "unique_opened" && event.email) {
       const lead = await Lead.findOneAndUpdate(
         { email: event.email },
         {
@@ -37,7 +43,8 @@ export const handleBrevoWebhook = async (
         },
         { new: true },
       );
-      if (lead) await updateCampaignStats(lead._id, "opened", "email");
+      if (lead)
+        await updateCampaignStats(lead._id, "opened", "email", messageId);
     }
 
     if (
@@ -52,7 +59,8 @@ export const handleBrevoWebhook = async (
         },
         { new: true },
       );
-      if (lead) await updateCampaignStats(lead._id, "clicked", "email");
+      if (lead)
+        await updateCampaignStats(lead._id, "clicked", "email", messageId);
     }
 
     if (event.event === "hard_bounce" && event.email) {
@@ -61,7 +69,8 @@ export const handleBrevoWebhook = async (
         { $inc: { "brevoStats.emailBounced": 1 } },
         { new: true },
       );
-      if (lead) await updateCampaignStats(lead._id, "bounced", "email");
+      if (lead)
+        await updateCampaignStats(lead._id, "bounced", "email", messageId);
     }
 
     if (event.event === "delivered" && event.to) {
@@ -74,7 +83,8 @@ export const handleBrevoWebhook = async (
         },
         { new: true },
       );
-      if (lead) await updateCampaignStats(lead._id, "delivered", "sms");
+      if (lead)
+        await updateCampaignStats(lead._id, "delivered", "sms", messageId);
     }
 
     res.status(200).json({ success: true });
@@ -88,27 +98,37 @@ async function updateCampaignStats(
   leadId: any,
   eventType: "delivered" | "opened" | "clicked" | "bounced",
   type: "email" | "sms",
+  messageId?: string,
 ) {
   try {
-    const campaign = await Campaign.findOne({
+    const query: any = {
       "recipients.leadId": leadId,
-      "recipients.status": "sent",
       status: "sent",
       type,
-    }).sort({ sentAt: -1 }); // La plus récente
+    };
+
+    if (messageId) {
+      query["recipients.messageId"] = messageId;
+    }
+
+    const campaign = await Campaign.findOne(query).sort({ sentAt: -1 });
+
+    console.log(
+      "Campaign trouvée:",
+      campaign?._id,
+      "pour lead:",
+      leadId,
+      "messageId:",
+      messageId,
+    );
 
     if (!campaign) return;
 
     const inc: any = {};
     inc[`brevoStats.${eventType}`] = 1;
 
-    if (eventType === "delivered") {
-      campaign.deliveredCount = (campaign.deliveredCount || 0) + 1;
-    }
-
     await Campaign.updateOne({ _id: campaign._id }, { $inc: inc });
 
-    // Recalculer les taux
     const updated = await Campaign.findById(campaign._id);
     if (updated && updated.sentCount > 0) {
       await Campaign.updateOne(
