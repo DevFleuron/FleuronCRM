@@ -84,7 +84,7 @@ export class BrevoService {
         subject,
         htmlContent,
         replyTo: {
-          email: process.env.BREVO_REPLY_TO_EMAIL || BREVO_SENDER_EMAIL,
+          email: process.env.BREVO_REPLY_TO_EMAIL,
           name: BREVO_SENDER_NAME,
         },
       };
