@@ -120,6 +120,8 @@ export class BrevoService {
       );
 
       console.log(`✅ Email envoyé vers ${to}`);
+      console.log("Brevo response data:", JSON.stringify(response.data));
+
       return {
         success: true,
         data: response.data,

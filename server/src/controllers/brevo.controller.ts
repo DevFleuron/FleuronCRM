@@ -8,7 +8,7 @@ export const handleBrevoWebhook = async (
 ): Promise<void> => {
   try {
     const event = req.body;
-    const messageId = event["message-id"] || event.messageId;
+    const messageId = event["message-id"];
     console.log(
       "Webhook Brevo reçu:",
       event.event,
@@ -47,10 +47,7 @@ export const handleBrevoWebhook = async (
         await updateCampaignStats(lead._id, "opened", "email", messageId);
     }
 
-    if (
-      (event.event === "click" || event.event === "unique_click") &&
-      event.email
-    ) {
+    if (event.event === "unique_click" && event.email) {
       const lead = await Lead.findOneAndUpdate(
         { email: event.email },
         {
