@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { LeadFiltersBar } from "@/src/components/features/leads/LeadFilters";
 import { LeadTable } from "@/src/components/features/leads/LeadTable";
 import { LeadImportModal } from "@/src/components/features/leads/LeadImportModal";
 import { useToast } from "@/src/components/contexts/ToastContext";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Lead, LeadFilters } from "@/src/types";
 import { ApiService } from "@/src/lib/api";
-import { getDepartementsFromRegion } from "@/src/lib/regions";
 
 export default function LeadsPage() {
   const { showToast } = useToast();
@@ -16,70 +16,51 @@ export default function LeadsPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    totalPages: 1,
+    page: 1,
+    limit: 50,
+  });
+  const loadLeads = useCallback(
+    async (currentPage = 1, currentFilters = filters) => {
+      try {
+        setLoading(true);
+        // Nettoyer les filtres undefined/vides
+        const cleanFilters: any = { page: currentPage };
+        Object.entries(currentFilters).forEach(([key, val]) => {
+          if (val !== undefined && val !== "" && val !== null) {
+            cleanFilters[key] = val;
+          }
+        });
+        const response = await ApiService.getLeads(cleanFilters);
+        if (response.success) {
+          setLeads(response.data);
+          setPagination(response.pagination);
+        } else {
+          showToast("error", "Erreur", "Impossible de charger les leads");
+        }
+      } catch (error) {
+        console.error("Erreur loadLeads:", error);
+        showToast("error", "Erreur", "Erreur lors du chargement des leads");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
-    loadLeads();
-  }, []);
+    loadLeads(1, filters);
+    setPage(1);
+  }, [filters]);
 
-  const loadLeads = async () => {
-    try {
-      setLoading(true);
-      const response = await ApiService.getLeads();
-      if (response.success) {
-        setLeads(response.data);
-      } else {
-        showToast("error", "Erreur", "Impossible de charger les leads");
-      }
-    } catch (error) {
-      console.error("Erreur loadLeads:", error);
-      showToast("error", "Erreur", "Erreur lors du chargement des leads");
-    } finally {
-      setLoading(false);
-    }
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    loadLeads(newPage, filters);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
-
-  const filteredLeads = useMemo(() => {
-    return leads.filter((lead) => {
-      if (filters.departement) {
-        const codePostal = (lead.codePostal || "").trim();
-        if (!codePostal.startsWith(filters.departement)) return false;
-      }
-      if (filters.region) {
-        const departements = getDepartementsFromRegion(filters.region);
-        const codePostal = (lead.codePostal || "").trim();
-        const dept = codePostal.substring(0, 2);
-        if (!departements.includes(dept)) return false;
-      }
-      if (filters.rapport && lead.rapport !== filters.rapport) return false;
-      if (filters.importId && String(lead.lastImportId) !== filters.importId)
-        return false;
-      if (filters.source && lead.source !== filters.source) return false;
-      if (filters.dateFrom && new Date(lead.date) < new Date(filters.dateFrom))
-        return false;
-      if (filters.dateTo && new Date(lead.date) > new Date(filters.dateTo))
-        return false;
-      if (
-        filters.typeInstallation &&
-        lead.typeInstallation !== filters.typeInstallation
-      )
-        return false;
-      if (filters.smsEnvoye === "yes" && !lead.smsEnvoye) return false;
-      if (filters.smsEnvoye === "no" && lead.smsEnvoye) return false;
-      if (filters.emailEnvoye === "yes" && !lead.emailEnvoye) return false;
-      if (filters.emailEnvoye === "no" && lead.emailEnvoye) return false;
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        return (
-          lead.nom?.toLowerCase().includes(searchLower) ||
-          lead.prenom?.toLowerCase().includes(searchLower) ||
-          lead.email?.toLowerCase().includes(searchLower) ||
-          lead.mobile?.includes(searchLower) ||
-          lead.ref?.includes(searchLower)
-        );
-      }
-      return true;
-    });
-  }, [leads, filters]);
 
   const handleToggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -88,15 +69,16 @@ export default function LeadsPage() {
   };
 
   const handleToggleSelectAll = () => {
-    if (selectedIds.length === filteredLeads.length) {
+    if (selectedIds.length === leads.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(filteredLeads.map((lead) => lead._id!));
+      setSelectedIds(leads.map((lead) => lead._id!));
     }
   };
 
   const handleResetFilters = () => {
     setFilters({});
+    setPage(1);
   };
 
   const handleImport = async (file: File) => {
@@ -104,7 +86,7 @@ export default function LeadsPage() {
       const response = await ApiService.importCSV(file);
       if (response.success) {
         showToast("success", "Import réussi !", response.message);
-        await loadLeads();
+        await loadLeads(1, filters);
       } else {
         showToast("error", "Erreur d'import", response.message);
       }
@@ -113,34 +95,26 @@ export default function LeadsPage() {
     }
   };
 
-  const handleSendSMS = (lead: Lead) => {
-    showToast("info", "SMS", `SMS sera envoyé à ${lead.prenom} ${lead.nom}`);
-  };
-
-  const handleSendEmail = (lead: Lead) => {
-    showToast(
-      "info",
-      "Email",
-      `Email sera envoyé à ${lead.prenom} ${lead.nom}`,
-    );
-  };
-
-  const handleViewDetails = (lead: Lead) => {
-    console.log("View details:", lead);
-  };
-
-  const handleBulkSMS = () => {
-    const selected = leads.filter((lead) => selectedIds.includes(lead._id!));
-    showToast("info", "SMS groupé", `${selected.length} SMS seront envoyés`);
-  };
-
-  const handleBulkEmail = () => {
-    const selected = leads.filter((lead) => selectedIds.includes(lead._id!));
-    showToast(
-      "info",
-      "Email groupé",
-      `${selected.length} emails seront envoyés`,
-    );
+  // Génère les numéros de pages à afficher
+  const getPageNumbers = () => {
+    const delta = 2;
+    const range: number[] = [];
+    for (
+      let i = Math.max(1, page - delta);
+      i <= Math.min(pagination.totalPages, page + delta);
+      i++
+    ) {
+      range.push(i);
+    }
+    if (range[0] > 1) {
+      if (range[0] > 2) range.unshift(-1); // ellipsis
+      range.unshift(1);
+    }
+    if (range[range.length - 1] < pagination.totalPages) {
+      if (range[range.length - 1] < pagination.totalPages - 1) range.push(-1);
+      range.push(pagination.totalPages);
+    }
+    return range;
   };
 
   if (loading) {
@@ -159,7 +133,7 @@ export default function LeadsPage() {
       <div>
         <h1 className="text-2xl md:text-3xl font-bold mb-2">Leads NRP</h1>
         <p className="text-text-secondary text-sm md:text-base">
-          Gestion et relance des clients ({leads.length} leads)
+          Gestion et relance des clients ({pagination.total} leads)
         </p>
       </div>
 
@@ -168,20 +142,74 @@ export default function LeadsPage() {
         onFiltersChange={setFilters}
         onReset={handleResetFilters}
         onImport={() => setIsImportModalOpen(true)}
-        resultsCount={filteredLeads.length}
+        resultsCount={pagination.total}
       />
 
       <LeadTable
-        leads={filteredLeads}
+        leads={leads}
         selectedIds={selectedIds}
         onToggleSelect={handleToggleSelect}
         onToggleSelectAll={handleToggleSelectAll}
-        onSendSMS={handleSendSMS}
-        onSendEmail={handleSendEmail}
-        onViewDetails={handleViewDetails}
-        onBulkSMS={handleBulkSMS}
-        onBulkEmail={handleBulkEmail}
+        onSendSMS={(lead) =>
+          showToast("info", "SMS", `SMS à ${lead.prenom} ${lead.nom}`)
+        }
+        onSendEmail={(lead) =>
+          showToast("info", "Email", `Email à ${lead.prenom} ${lead.nom}`)
+        }
+        onViewDetails={(lead) => console.log("View details:", lead)}
+        onBulkSMS={() =>
+          showToast("info", "SMS groupé", `${selectedIds.length} SMS`)
+        }
+        onBulkEmail={() =>
+          showToast("info", "Email groupé", `${selectedIds.length} emails`)
+        }
       />
+
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between px-2">
+          <p className="text-sm text-slate-400">
+            Page {page} sur {pagination.totalPages} — {pagination.total} leads
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => handlePageChange(page - 1)}
+              disabled={page === 1}
+              className="p-2 rounded-lg hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            {getPageNumbers().map((num, idx) =>
+              num === -1 ? (
+                <span key={`ellipsis-${idx}`} className="px-2 text-slate-500">
+                  ...
+                </span>
+              ) : (
+                <button
+                  key={num}
+                  onClick={() => handlePageChange(num)}
+                  className={`w-9 h-9 rounded-lg text-sm font-semibold transition-colors ${
+                    num === page
+                      ? "bg-brand-primary text-white"
+                      : "hover:bg-indigo-600 text-slate-400"
+                  }`}
+                >
+                  {num}
+                </button>
+              ),
+            )}
+
+            <button
+              onClick={() => handlePageChange(page + 1)}
+              disabled={page === pagination.totalPages}
+              className="p-2 rounded-lg hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       <LeadImportModal
         isOpen={isImportModalOpen}

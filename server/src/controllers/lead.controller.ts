@@ -8,6 +8,9 @@ import Campaign from "../models/Campaign.model";
  */
 export const getLeads = async (req: Request, res: Response): Promise<void> => {
   try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = 50;
+    const skip = (page - 1) * limit;
     const {
       rapport,
       source,
@@ -20,8 +23,6 @@ export const getLeads = async (req: Request, res: Response): Promise<void> => {
       departement,
       region,
       importId,
-      limit = 50,
-      skip = 0,
     } = req.query;
 
     // Construire le filtre
@@ -79,20 +80,19 @@ export const getLeads = async (req: Request, res: Response): Promise<void> => {
       ];
     }
 
-    const leads = await Lead.find(filter)
-      .sort({ date: -1 })
-      .limit(Number(limit))
-      .skip(Number(skip));
-
-    const total = await Lead.countDocuments(filter);
+    const [leads, total] = await Promise.all([
+      Lead.find(filter).sort({ date: -1 }).skip(skip).limit(limit),
+      Lead.countDocuments(filter),
+    ]);
 
     res.status(200).json({
       success: true,
       data: leads,
       pagination: {
+        page,
+        limit,
         total,
-        limit: Number(limit),
-        skip: Number(skip),
+        totalPages: Math.ceil(total / limit),
       },
     });
   } catch (error: any) {

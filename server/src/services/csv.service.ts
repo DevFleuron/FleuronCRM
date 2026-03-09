@@ -6,25 +6,7 @@ import Campaign from "../models/Campaign.model";
 import { SequenceService } from "./sequence.service";
 import { isLeavingNRP } from "../utils/lead.utils";
 import mongoose from "mongoose";
-
-const VALID_RAPPORTS = [
-  "NOUVEAU PROSPECT",
-  "NRP",
-  "NRP 1",
-  "NRP 2",
-  "NRP 3",
-  "NRP 4",
-  "NRP 5",
-  "CLIENT",
-  "PERDU",
-  "RDV PRIS",
-  "A RAPPELER",
-  "DEVIS ENVOYE",
-  "DEVIS ENVOYE NRP 1",
-  "DEVIS ENVOYE NRP 2",
-  "PROSPECT A RETRAITER",
-  "DOUBLON",
-];
+import Settings from "../models/Settings.model";
 
 export class CSVService {
   private static normalizeHeader(header: string): string {
@@ -129,6 +111,23 @@ export class CSVService {
   static async importCSV(filePath: string, nomFichier: string) {
     const startTime = Date.now();
 
+    const settingsDoc = await Settings.findOne();
+    const VALID_RAPPORTS = settingsDoc?.rapports?.length
+      ? settingsDoc.rapports
+      : [
+          "NOUVEAU PROSPECT",
+          "NRP",
+          "NRP 1",
+          "NRP 2",
+          "NRP 3",
+          "NRP 4",
+          "NRP 5",
+          "CLIENT",
+          "PERDU",
+          "RDV PRIS",
+          "A RAPPELER",
+        ];
+
     const importHistory = await ImportHistory.create({
       nomFichier,
       nombreLeads: 0,
@@ -177,15 +176,16 @@ export class CSVService {
               }
 
               const rawRapport = mappedData.rapport?.trim() || "";
-              const rapport = VALID_RAPPORTS.includes(rawRapport)
-                ? rawRapport
-                : "NOUVEAU PROSPECT";
 
               if (!VALID_RAPPORTS.includes(rawRapport)) {
-                console.log(
-                  `Rapport invalide "${rawRapport}" → remplacé par "NOUVEAU PROSPECT"`,
-                );
+                const errorMsg = `Rapport invalide "${rawRapport}" pour ${mappedData.prenom?.trim() || ""} ${mappedData.nom?.trim().toUpperCase() || ""}`;
+                console.log(errorMsg);
+                erreurs.push(errorMsg);
+                stats.echecs++;
+                return;
               }
+
+              const rapport = rawRapport;
 
               const leadData = {
                 ref: mappedData.ref?.trim(),
