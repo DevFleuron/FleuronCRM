@@ -92,6 +92,7 @@ const CampaignSchema: Schema = new Schema<ICampaignDocument>(
               newStatus: { type: String },
             },
           },
+          messageId: { type: String },
           error: { type: String },
         },
       ],

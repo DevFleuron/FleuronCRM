@@ -113,6 +113,7 @@ export async function processCampaignSending(campaignId: string) {
           recipient.sentAt = new Date();
           recipient.messageId = result.messageId;
           successCount++;
+          campaign.markModified("recipients");
 
           // Mettre à jour le lead
           if (campaign.type === "sms") {
