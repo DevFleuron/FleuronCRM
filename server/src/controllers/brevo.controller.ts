@@ -47,7 +47,10 @@ export const handleBrevoWebhook = async (
         await updateCampaignStats(lead._id, "opened", "email", messageId);
     }
 
-    if (event.event === "unique_click" && event.email) {
+    if (
+      (event.event === "click" || event.event === "unique_click") &&
+      event.email
+    ) {
       const lead = await Lead.findOneAndUpdate(
         { email: event.email },
         {
@@ -68,6 +71,25 @@ export const handleBrevoWebhook = async (
       );
       if (lead)
         await updateCampaignStats(lead._id, "bounced", "email", messageId);
+    }
+
+    if (event.event === "soft_bounce" && event.email) {
+      const lead = await Lead.findOneAndUpdate(
+        { email: event.email },
+        { $inc: { "brevoStats.emailBounced": 1 } },
+        { new: true },
+      );
+      if (lead)
+        await updateCampaignStats(lead._id, "bounced", "email", messageId);
+    }
+
+    if (event.event === "spam" && event.email) {
+      const lead = await Lead.findOneAndUpdate(
+        { email: event.email },
+        { $inc: { "brevoStats.emailSpam": 1 } },
+        { new: true },
+      );
+      if (lead) await updateCampaignStats(lead._id, "spam", "email", messageId);
     }
 
     if (event.event === "delivered" && event.to) {
@@ -93,7 +115,7 @@ export const handleBrevoWebhook = async (
 
 async function updateCampaignStats(
   leadId: any,
-  eventType: "delivered" | "opened" | "clicked" | "bounced",
+  eventType: "delivered" | "opened" | "clicked" | "bounced" | "spam",
   type: "email" | "sms",
   messageId?: string,
 ) {

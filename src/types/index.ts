@@ -159,6 +159,7 @@ export interface Campaign {
     delivered: number;
     opened: number;
     clicked: number;
+    spam: number;
     bounced: number;
     openRate: number;
     clickRate: number;

@@ -223,6 +223,12 @@ export function CampaignDetailsModal({
                       </p>
                       <p className="text-xs text-slate-500 mt-1">Bounces</p>
                     </div>
+                    <div className="bg-slate-900 border border-error/20 rounded-xl p-4 text-center">
+                      <p className="text-2xl font-bold text-error">
+                        {campaign.brevoStats?.spam || 0}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">Spam</p>
+                    </div>
                   </>
                 )}
 

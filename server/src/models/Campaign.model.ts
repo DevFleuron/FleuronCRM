@@ -43,6 +43,7 @@ export interface ICampaign {
     opened: number;
     clicked: number;
     bounced: number;
+    spam: { type: Number; default: 0 };
     openRate: number;
     clickRate: number;
   };
