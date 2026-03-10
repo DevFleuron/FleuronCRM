@@ -18,7 +18,9 @@ export default function NewCampaignPage() {
     try {
       if (showLoader) setLoading(true);
       const [leadsResponse, templatesResponse] = await Promise.all([
-        ApiService.getLeads(importId ? { importId } : {}),
+        ApiService.getLeads(
+          importId ? { importId, all: "true" } : { all: "true" },
+        ),
         ApiService.getTemplates(),
       ]);
       if (leadsResponse.success) setAllLeads(leadsResponse.data);

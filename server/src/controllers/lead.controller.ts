@@ -9,6 +9,7 @@ import Campaign from "../models/Campaign.model";
 export const getLeads = async (req: Request, res: Response): Promise<void> => {
   try {
     const page = parseInt(req.query.page as string) || 1;
+    const all = req.query.all === "true";
     const limit = 50;
     const skip = (page - 1) * limit;
     const {
@@ -81,7 +82,9 @@ export const getLeads = async (req: Request, res: Response): Promise<void> => {
     }
 
     const [leads, total] = await Promise.all([
-      Lead.find(filter).sort({ date: -1 }).skip(skip).limit(limit),
+      all
+        ? Lead.find(filter).sort({ date: -1 })
+        : Lead.find(filter).sort({ date: -1 }).skip(skip).limit(limit),
       Lead.countDocuments(filter),
     ]);
 
