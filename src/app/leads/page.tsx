@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { LeadFiltersBar } from "@/src/components/features/leads/LeadFilters";
 import { LeadTable } from "@/src/components/features/leads/LeadTable";
 import { LeadImportModal } from "@/src/components/features/leads/LeadImportModal";
@@ -16,6 +16,7 @@ export default function LeadsPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({
     total: 0,
@@ -52,8 +53,19 @@ export default function LeadsPage() {
   );
 
   useEffect(() => {
-    loadLeads(1, filters);
-    setPage(1);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+
+    searchTimeout.current = setTimeout(
+      () => {
+        loadLeads(1, filters);
+        setPage(1);
+      },
+      filters.search ? 400 : 0,
+    );
+
+    return () => {
+      if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    };
   }, [filters]);
 
   const handlePageChange = (newPage: number) => {
