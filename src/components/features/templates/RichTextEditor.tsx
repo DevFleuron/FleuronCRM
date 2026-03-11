@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
+import { Color } from "@tiptap/extension-color";
 import {
   Bold,
   Italic,
@@ -18,6 +19,7 @@ import {
   AlignRight,
   Unlink,
   ExternalLink,
+  Baseline,
 } from "lucide-react";
 
 interface RichTextEditorProps {
@@ -34,6 +36,21 @@ interface ToolbarButtonProps {
   title: string;
   children: React.ReactNode;
 }
+
+const PRESET_COLORS = [
+  "#000000",
+  "#2d2d2d",
+  "#4b5563",
+  "#9ca3af",
+  "#ffffff",
+  "#F5771F",
+  "#7a2a81",
+  "#6366f1",
+  "#ef4444",
+  "#f59e0b",
+  "#10b981",
+  "#3b82f6",
+];
 
 function ToolbarButton({
   onClick,
@@ -71,6 +88,8 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   const [linkUrl, setLinkUrl] = useState("");
   const [showLinkInput, setShowLinkInput] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const colorPickerRef = useRef<HTMLDivElement>(null);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -98,6 +117,8 @@ export function RichTextEditor({
         types: ["paragraph"],
         alignments: ["left", "center", "right", "justify"],
       }),
+      TextStyle,
+      Color,
     ],
     content: value,
     onUpdate: ({ editor }) => {
@@ -111,7 +132,6 @@ export function RichTextEditor({
     },
   });
 
-  // Expose insert variable function to parent
   const insertVariable = useCallback(
     (variable: string) => {
       if (!editor) return;
@@ -120,7 +140,6 @@ export function RichTextEditor({
     [editor],
   );
 
-  // Call parent with insertVariable fn so parent can wire up variable buttons
   React.useEffect(() => {
     if (onInsertVariable) {
       onInsertVariable(insertVariable);
@@ -142,6 +161,13 @@ export function RichTextEditor({
     editor?.chain().focus().unsetLink().run();
     setShowLinkInput(false);
   };
+
+  const handleColorSelect = (color: string) => {
+    editor?.chain().focus().setColor(color).run();
+    setShowColorPicker(false);
+  };
+
+  const currentColor = editor?.getAttributes("textStyle").color || "#9ca3af";
 
   if (!editor) return null;
 
@@ -196,7 +222,6 @@ export function RichTextEditor({
         >
           <AlignRight className="w-4 h-4" />
         </ToolbarButton>
-
         <ToolbarButton
           onClick={() => editor.chain().focus().setTextAlign("justify").run()}
           active={editor.isActive({ textAlign: "justify" })}
@@ -204,6 +229,65 @@ export function RichTextEditor({
         >
           <AlignJustify className="w-4 h-4" />
         </ToolbarButton>
+
+        <Divider />
+
+        {/* Color picker */}
+        <div className="relative" ref={colorPickerRef}>
+          <button
+            type="button"
+            title="Couleur du texte"
+            onClick={() => setShowColorPicker(!showColorPicker)}
+            className="p-2 rounded-lg transition-all text-slate-400 hover:bg-slate-700 hover:text-slate-200 flex flex-col items-center gap-0.5"
+          >
+            <Baseline className="w-4 h-4" />
+            <div
+              className="w-4 h-1 rounded-full"
+              style={{ backgroundColor: currentColor }}
+            />
+          </button>
+
+          {showColorPicker && (
+            <div className="absolute top-full left-0 mt-1 z-50 bg-slate-800 border border-slate-700 rounded-xl p-3 shadow-xl w-48">
+              {/* Preset colors grid */}
+              <div className="grid grid-cols-6 gap-1.5 mb-3">
+                {PRESET_COLORS.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => handleColorSelect(color)}
+                    title={color}
+                    className="w-6 h-6 rounded-md border border-slate-600 hover:scale-110 transition-transform"
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+
+              {/* Custom color input */}
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-700">
+                <input
+                  type="color"
+                  defaultValue={currentColor}
+                  onChange={(e) => handleColorSelect(e.target.value)}
+                  className="w-7 h-7 rounded cursor-pointer border-0 bg-transparent p-0"
+                />
+                <span className="text-xs text-slate-400">Personnalisée</span>
+              </div>
+
+              {/* Reset */}
+              <button
+                type="button"
+                onClick={() => {
+                  editor.chain().focus().unsetColor().run();
+                  setShowColorPicker(false);
+                }}
+                className="mt-2 w-full text-xs text-slate-400 hover:text-slate-200 text-center py-1 hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                Réinitialiser
+              </button>
+            </div>
+          )}
+        </div>
 
         <Divider />
 

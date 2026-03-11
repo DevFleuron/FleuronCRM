@@ -72,10 +72,6 @@ export const getEmailTemplate = (
                 <table role="presentation" class="email-container" cellspacing="0" cellpadding="0" border="0" width="600"
                     style="width: 600px; max-width: 600px; background-color: #ffffff; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
 
-                    <!-- Orange top bar -->
-                    <tr>
-                        <td style="background-color: #F5771F; height: 5px; font-size: 0; line-height: 0;">&nbsp;</td>
-                    </tr>
 
                     <!-- Bannière -->
                     ${bannerHtml}

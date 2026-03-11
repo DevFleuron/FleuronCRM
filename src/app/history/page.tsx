@@ -21,6 +21,7 @@ interface ImportHistory {
   nombreLeads: number;
   nombreSucces: number;
   nombreEchecs: number;
+  nombreDoublons: number;
   nombreNouveaux: number;
   nombreMisesAJour: number;
   statut: "en_cours" | "termine" | "erreur";
@@ -118,7 +119,7 @@ export default function HistoryPage() {
       </div>
 
       {/* Stats globales */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="bg-[#111114] border border-slate-800 rounded-xl p-4">
           <p className="text-sm text-slate-400 mb-1">Total imports</p>
           <p className="text-3xl font-bold">{history.length}</p>
@@ -141,6 +142,12 @@ export default function HistoryPage() {
             {history.reduce((sum, h) => sum + h.nombreMisesAJour, 0)}
           </p>
         </div>
+        <div className="bg-[#111114] border border-slate-800 rounded-xl p-4">
+          <p className="text-sm text-slate-400 mb-1">Inchangés</p>
+          <p className="text-3xl font-bold text-slate-400">
+            {history.reduce((sum, h) => sum + (h.nombreDoublons || 0), 0)}
+          </p>
+        </div>
       </div>
 
       {/* Liste */}
@@ -156,7 +163,12 @@ export default function HistoryPage() {
         <div className="space-y-4">
           {history.map((item) => {
             const isExpanded = expandedId === item._id;
-            const hasChanges = item.changes && item.changes.length > 0;
+            const realChanges =
+              item.changes?.filter((c) => c.action !== "duplicate") ?? [];
+            const inchanges =
+              item.changes?.filter((c) => c.action === "duplicate") ?? [];
+            const hasChanges = realChanges.length > 0;
+            const hasInchanges = inchanges.length > 0;
             const hasErrors = item.erreurs && item.erreurs.length > 0;
 
             return (
@@ -193,7 +205,7 @@ export default function HistoryPage() {
                   </div>
 
                   {/* Stats */}
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+                  <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-4">
                     <div className="bg-slate-900/50 rounded-lg p-3">
                       <p className="text-xs text-slate-400 mb-1">Total</p>
                       <p className="text-xl font-bold">{item.nombreLeads}</p>
@@ -211,6 +223,12 @@ export default function HistoryPage() {
                       </p>
                     </div>
                     <div className="bg-slate-900/50 rounded-lg p-3">
+                      <p className="text-xs text-slate-400 mb-1">Inchangés</p>
+                      <p className="text-xl font-bold text-slate-400">
+                        {item.nombreDoublons || 0}
+                      </p>
+                    </div>
+                    <div className="bg-slate-900/50 rounded-lg p-3">
                       <p className="text-xs text-slate-400 mb-1">Succès</p>
                       <p className="text-xl font-bold text-success">
                         {item.nombreSucces}
@@ -225,7 +243,7 @@ export default function HistoryPage() {
                   </div>
 
                   {/* Toggle details */}
-                  {(hasChanges || hasErrors) && (
+                  {(hasChanges || hasInchanges || hasErrors) && (
                     <button
                       onClick={() => toggleExpand(item._id)}
                       className="flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
@@ -239,8 +257,8 @@ export default function HistoryPage() {
                         <>
                           <ChevronDown className="w-4 h-4" />
                           Voir les détails
-                          {hasChanges &&
-                            ` (${item.changes.length} changements)`}
+                          {hasChanges && ` (${realChanges.length} changements)`}
+                          {hasInchanges && ` (${inchanges.length} inchangés)`}
                           {hasErrors && ` (${item.erreurs.length} erreurs)`}
                         </>
                       )}
@@ -256,10 +274,10 @@ export default function HistoryPage() {
                       <div>
                         <h4 className="font-semibold mb-3 flex items-center gap-2">
                           <AlertCircle className="w-4 h-4 text-warning" />
-                          Changements détectés ({item.changes.length})
+                          Changements détectés ({realChanges.length})
                         </h4>
                         <div className="space-y-2 max-h-64 overflow-y-auto">
-                          {item.changes.map((change, index) => (
+                          {realChanges.map((change, index) => (
                             <div
                               key={index}
                               className="bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-sm"
@@ -291,6 +309,39 @@ export default function HistoryPage() {
                                   Action: {change.action}
                                 </div>
                               )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Inchangés */}
+                    {hasInchanges && (
+                      <div>
+                        <h4 className="font-semibold mb-3 flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-slate-400" />
+                          Leads inchangés ({inchanges.length})
+                        </h4>
+                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                          {inchanges.map((change, index) => (
+                            <div
+                              key={index}
+                              className="bg-slate-900/50 border border-slate-600 rounded-lg p-3 text-sm"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium text-slate-300">
+                                  {change.leadName || `Lead ${change.leadRef}`}
+                                </span>
+                                <span className="text-xs text-slate-500">
+                                  {new Date(change.timestamp).toLocaleString(
+                                    "fr-FR",
+                                  )}
+                                </span>
+                              </div>
+                              <p className="text-slate-500 text-xs mt-1">
+                                Déjà présent en base, aucune modification
+                                détectée.
+                              </p>
                             </div>
                           ))}
                         </div>

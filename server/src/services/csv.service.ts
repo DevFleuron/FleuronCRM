@@ -135,12 +135,19 @@ export class CSVService {
       nombreEchecs: 0,
       nombreNouveaux: 0,
       nombreMisesAJour: 0,
+      nombreDoublons: 0,
       statut: "en_cours",
       erreurs: [],
       changes: [],
     });
 
-    const stats = { total: 0, nouveaux: 0, misesAJour: 0, echecs: 0 };
+    const stats = {
+      total: 0,
+      nouveaux: 0,
+      misesAJour: 0,
+      echecs: 0,
+      doublons: 0,
+    };
     const erreurs: string[] = [];
     const changes: any[] = [];
     const pendingRows: Promise<void>[] = [];
@@ -226,14 +233,14 @@ export class CSVService {
               if (existingLead) {
                 const oldStatus = existingLead.rapport;
 
-                const hasChanged = await this.updateLeadAndDetectChanges(
+                const result = await this.updateLeadAndDetectChanges(
                   existingLead,
                   leadData,
                   importHistory._id,
                   changes,
                 );
 
-                if (hasChanged) {
+                if (result === "updated") {
                   stats.misesAJour++;
 
                   const statusChanged = oldStatus !== leadData.rapport;
@@ -248,6 +255,11 @@ export class CSVService {
                       );
                     }
                   }
+                } else if (result === "duplicate") {
+                  stats.doublons++;
+                  console.log(
+                    `Doublon détecté: ${leadData.ref} — aucun champ modifié`,
+                  );
                 }
               } else {
                 await Lead.create({
@@ -292,6 +304,7 @@ export class CSVService {
                 nombreEchecs: stats.echecs,
                 nombreNouveaux: stats.nouveaux,
                 nombreMisesAJour: stats.misesAJour,
+                nombreDoublons: stats.doublons,
                 statut: "termine",
                 erreurs,
                 changes,
@@ -300,12 +313,13 @@ export class CSVService {
             );
 
             resolve({
-              message: `Import terminé: ${stats.nouveaux} nouveaux, ${stats.misesAJour} mis à jour, ${stats.echecs} erreurs`,
+              message: `Import terminé: ${stats.nouveaux} nouveaux, ${stats.misesAJour} mis à jour, ${stats.doublons} doublons, ${stats.echecs} erreurs`,
               importHistoryId: importHistory._id,
               stats: {
                 total: stats.total,
                 nouveaux: stats.nouveaux,
                 misesAJour: stats.misesAJour,
+                doublons: stats.doublons,
                 echecs: stats.echecs,
               },
               errors: erreurs,
@@ -325,7 +339,7 @@ export class CSVService {
     newData: any,
     importId: mongoose.Types.ObjectId,
     changes: any[],
-  ): Promise<boolean> {
+  ): Promise<"updated" | "duplicate"> {
     let hasChanged = false;
     const fieldsToCheck = [
       "rapport",
@@ -400,9 +414,22 @@ export class CSVService {
       existingLead.lastImportId = importId;
       existingLead.importCount = (existingLead.importCount || 0) + 1;
       await existingLead.save();
+      return "updated";
     }
 
-    return hasChanged;
+    // Lead trouvé en base mais aucun champ n'a changé → doublon
+    changes.push({
+      leadRef: existingLead.ref,
+      leadId: existingLead._id,
+      leadName: `${existingLead.prenom} ${existingLead.nom}`,
+      field: null,
+      oldValue: null,
+      newValue: null,
+      action: "duplicate",
+      timestamp: new Date(),
+    });
+
+    return "duplicate";
   }
 
   private static async removeLeadFromActiveCampaigns(

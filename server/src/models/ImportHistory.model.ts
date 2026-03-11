@@ -6,10 +6,11 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface IDetectedChange {
   leadRef: string;
   leadId: mongoose.Types.ObjectId;
-  field: string; // 'rapport', 'mobile', 'email', etc.
-  oldValue: string;
-  newValue: string;
-  action: "updated" | "removed_from_campaigns" | "none";
+  leadName?: string;
+  field: string | null;
+  oldValue: string | null;
+  newValue: string | null;
+  action: "updated" | "removed_from_campaigns" | "duplicate" | "none";
   timestamp: Date;
 }
 
@@ -22,6 +23,7 @@ export interface IImportHistory {
   nombreSucces: number;
   nombreEchecs: number;
   nombreMisesAJour: number;
+  nombreDoublons: number;
   nombreNouveaux: number;
   dateImport: Date;
   statut: "en_cours" | "termine" | "echec";
@@ -48,6 +50,11 @@ const ImportHistorySchema: Schema = new Schema(
     nombreSucces: {
       type: Number,
       required: true,
+      min: 0,
+    },
+    nombreDoublons: {
+      type: Number,
+      default: 0,
       min: 0,
     },
     nombreEchecs: {
@@ -81,15 +88,15 @@ const ImportHistorySchema: Schema = new Schema(
     changes: {
       type: [
         {
-          leadRef: { type: String, required: true },
+          leadRef: { type: String },
           leadName: { type: String },
-          leadId: { type: Schema.Types.ObjectId, ref: "Lead", required: true },
-          field: { type: String, required: true },
+          leadId: { type: Schema.Types.ObjectId, ref: "Lead" },
+          field: { type: String },
           oldValue: { type: String },
           newValue: { type: String },
           action: {
             type: String,
-            enum: ["updated", "removed_from_campaigns", "none"],
+            enum: ["updated", "removed_from_campaigns", "duplicate", "none"], // "duplicate" manquant
             default: "updated",
           },
           timestamp: { type: Date, default: Date.now },
