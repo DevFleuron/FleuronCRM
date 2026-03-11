@@ -29,13 +29,6 @@ export function proxy(request: NextRequest) {
 // Configurer quelles routes doivent passer par le middleware
 export const config = {
   matcher: [
-    /*
-     * Match toutes les routes sauf :
-     * - api (API routes)
-     * - _next/static (fichiers statiques)
-     * - _next/image (optimisation d'images)
-     * - favicon.ico
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.png|.*\\.webp|.*\\.jpg|.*\\.jpeg|.*\\.gif|.*\\.svg|.*\\.ico).*)",
   ],
 };
