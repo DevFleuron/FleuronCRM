@@ -26,17 +26,8 @@ export const getEmailTemplate = (
     ? `
     <tr>
       <td style="padding: 0; font-size: 0; line-height: 0;">
-        <div style="position: relative; font-size: 0; line-height: 0;">
-          <!-- Image bannière pleine largeur -->
-          <img src="${absoluteBannerUrl}" alt="Fleuron Industries" width="600"
-            style="width: 600px; max-width: 100%; height: 220px; object-fit: cover; display: block;" />
-        </div>
-        <!-- Logo centré chevauchant la bannière -->
-        <div style="text-align: center; margin-top: -50px; padding-bottom: 0; font-size: 0; line-height: 0;">
-          <img src="${BASE_URL}/logo.png" alt="Fleuron Industries Pro"
-            width="130"
-            style="width: 130px; height: auto; display: inline-block; background-color: #ffffff; border-radius: 8px; padding: 6px 12px;" />
-        </div>
+        <img src="${absoluteBannerUrl}" alt="Fleuron Industries" width="600"
+          style="width: 600px; max-width: 100%; height: auto; display: block;" />
       </td>
     </tr>`
     : "";
@@ -69,7 +60,7 @@ export const getEmailTemplate = (
         @media only screen and (max-width: 600px) {
             .email-container { width: 100% !important; }
             .content-td { padding: 30px 20px !important; font-size: 15px !important; }
-            .footer-td { padding: 30px 20px !important; }
+            .footer-td { padding: 24px 20px !important; }
         }
     </style>
 </head>
@@ -86,7 +77,7 @@ export const getEmailTemplate = (
                         <td style="background-color: #F5771F; height: 5px; font-size: 0; line-height: 0;">&nbsp;</td>
                     </tr>
 
-                    <!-- Bannière + Logo chevauchant -->
+                    <!-- Bannière -->
                     ${bannerHtml}
 
                     <!-- Content -->
@@ -111,20 +102,20 @@ export const getEmailTemplate = (
                         <td class="footer-td" style="padding: 28px 40px 32px 40px; background-color: #ffffff;">
 
                             <!-- Label équipe -->
-                            <p style="margin: 0 0 12px 0; font-size: 11px; font-weight: 700; color: #2d2d2d; letter-spacing: 0.8px; text-transform: uppercase;">
+                            <p style="margin: 0 0 14px 0; font-size: 11px; font-weight: 700; color: #2d2d2d; letter-spacing: 0.8px; text-transform: uppercase;">
                                 L'ÉQUIPE FLEURON INDUSTRIES
                             </p>
 
-                            <!-- Logo -->
-                            <a href="https://fleuronindustries.fr/" target="_blank" style="text-decoration: none; display: inline-block; margin-bottom: 12px;">
-                                <img src="${BASE_URL}/logo.png" alt="Fleuron Industries Pro" width="120"
-                                    style="width: 120px; height: auto; display: block;" />
+                            <!-- Logo (seul sur sa ligne) -->
+                            <a href="https://fleuronindustries.fr/" target="_blank" style="text-decoration: none; display: block; margin-bottom: 12px;">
+                                <img src="${BASE_URL}/logo.png" alt="Fleuron Industries Pro" width="130"
+                                    style="width: 130px; height: auto; display: block;" />
                             </a>
 
-                            <!-- Badge 3660 -->
-                            <a href="tel:3660" style="text-decoration: none; display: inline-block;">
+                            <!-- Badge 3660 (en dessous du logo) -->
+                            <a href="tel:3660" style="text-decoration: none; display: block;">
                                 <img src="${BASE_URL}/numero.webp" alt="Service &amp; appel gratuits — 3660"
-                                    width="110" style="width: 110px; height: auto; display: block;" />
+                                    width="115" style="width: 115px; height: auto; display: block;" />
                             </a>
 
                             <!-- Copyright -->
