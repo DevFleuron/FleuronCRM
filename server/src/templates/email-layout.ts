@@ -5,10 +5,11 @@ interface EmailTemplateOptions {
   ctaUrl?: string;
 }
 
+const BASE_URL = "https://crm.fleuronindustries.fr";
+
 export const getEmailTemplate = (
   contentOrOptions: string | EmailTemplateOptions,
 ): string => {
-  // Rétrocompatibilité — si on passe une string directement
   const options: EmailTemplateOptions =
     typeof contentOrOptions === "string"
       ? { content: contentOrOptions }
@@ -16,12 +17,26 @@ export const getEmailTemplate = (
 
   const { content, bannerUrl, ctaText, ctaUrl } = options;
 
-  const bannerHtml = bannerUrl
+  // Rendre la bannerUrl absolue si relative
+  const absoluteBannerUrl = bannerUrl?.startsWith("/")
+    ? `${BASE_URL}${bannerUrl}`
+    : bannerUrl;
+
+  const bannerHtml = absoluteBannerUrl
     ? `
     <tr>
       <td style="padding: 0; font-size: 0; line-height: 0;">
-        <img src="${bannerUrl}" alt="Fleuron Industries" width="600"
-          style="width: 600px; max-width: 100%; height: auto; display: block;" />
+        <div style="position: relative; font-size: 0; line-height: 0;">
+          <!-- Image bannière pleine largeur -->
+          <img src="${absoluteBannerUrl}" alt="Fleuron Industries" width="600"
+            style="width: 600px; max-width: 100%; height: 220px; object-fit: cover; display: block;" />
+        </div>
+        <!-- Logo centré chevauchant la bannière -->
+        <div style="text-align: center; margin-top: -50px; padding-bottom: 0; font-size: 0; line-height: 0;">
+          <img src="${BASE_URL}/logo.png" alt="Fleuron Industries Pro"
+            width="130"
+            style="width: 130px; height: auto; display: inline-block; background-color: #ffffff; border-radius: 8px; padding: 6px 12px;" />
+        </div>
       </td>
     </tr>`
     : "";
@@ -49,7 +64,7 @@ export const getEmailTemplate = (
     <style>
         body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
         table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        img { -ms-interpolation-mode: bicubic; border: 0; line-height: 100%; outline: none; text-decoration: none; }
         body { margin: 0 !important; padding: 0 !important; background-color: #f4f4f4; }
         @media only screen and (max-width: 600px) {
             .email-container { width: 100% !important; }
@@ -71,12 +86,12 @@ export const getEmailTemplate = (
                         <td style="background-color: #F5771F; height: 5px; font-size: 0; line-height: 0;">&nbsp;</td>
                     </tr>
 
-                    <!-- Bannière -->
+                    <!-- Bannière + Logo chevauchant -->
                     ${bannerHtml}
 
                     <!-- Content -->
                     <tr>
-                        <td class="content-td" style="padding: 40px 40px 32px 40px; color: #2d2d2d; line-height: 1.75; font-size: 15px;">
+                        <td class="content-td" style="padding: 32px 40px; color: #2d2d2d; line-height: 1.75; font-size: 15px;">
                             ${content}
                         </td>
                     </tr>
@@ -87,33 +102,33 @@ export const getEmailTemplate = (
                     <!-- Divider -->
                     <tr>
                         <td style="padding: 0 40px;">
-                            <div style="height: 1px; background-color: #f0f0f0; font-size: 0; line-height: 0;">&nbsp;</div>
+                            <div style="height: 1px; background-color: #e5e7eb; font-size: 0; line-height: 0;">&nbsp;</div>
                         </td>
                     </tr>
 
                     <!-- Footer / Signature -->
                     <tr>
-                        <td class="footer-td" style="background-color: #f8f8f8; padding: 32px 40px; border-top: 3px solid #F5771F;">
-                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                                <tr>
-                                    <!-- Logo cliquable vers le site -->
-                                    <td style="vertical-align: middle;">
-                                        <a href="https://fleuronindustries.fr/" target="_blank" style="text-decoration: none; display: inline-block;">
-                                            <img src="https://fleuronindustries.fr/logo.png" alt="Fleuron Industries" width="140"
-                                                style="width: 140px; height: auto; display: block;" />
-                                        </a>
-                                    </td>
-                                    <!-- Badge 3660 cliquable -->
-                                    <td style="vertical-align: middle; text-align: right;">
-                                        <a href="tel:3660" style="text-decoration: none; display: inline-block;">
-                                            <img src="https://fleuronindustries.fr/3660-badge.png" alt="Service &amp; appel gratuits — 3660"
-                                                width="130" style="width: 130px; height: auto; display: block;" />
-                                        </a>
-                                    </td>
-                                </tr>
-                            </table>
+                        <td class="footer-td" style="padding: 28px 40px 32px 40px; background-color: #ffffff;">
 
-                            <div style="margin-top: 20px; font-size: 11px; color: #9ca3af; text-align: center;">
+                            <!-- Label équipe -->
+                            <p style="margin: 0 0 12px 0; font-size: 11px; font-weight: 700; color: #2d2d2d; letter-spacing: 0.8px; text-transform: uppercase;">
+                                L'ÉQUIPE FLEURON INDUSTRIES
+                            </p>
+
+                            <!-- Logo -->
+                            <a href="https://fleuronindustries.fr/" target="_blank" style="text-decoration: none; display: inline-block; margin-bottom: 12px;">
+                                <img src="${BASE_URL}/logo.png" alt="Fleuron Industries Pro" width="120"
+                                    style="width: 120px; height: auto; display: block;" />
+                            </a>
+
+                            <!-- Badge 3660 -->
+                            <a href="tel:3660" style="text-decoration: none; display: inline-block;">
+                                <img src="${BASE_URL}/numero.webp" alt="Service &amp; appel gratuits — 3660"
+                                    width="110" style="width: 110px; height: auto; display: block;" />
+                            </a>
+
+                            <!-- Copyright -->
+                            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #f0f0f0; font-size: 11px; color: #9ca3af; text-align: center;">
                                 © ${new Date().getFullYear()} Fleuron Industries SaS — Tous droits réservés
                             </div>
                         </td>
