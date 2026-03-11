@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { X, Plus, Eye, ExternalLink } from "lucide-react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { X, Plus, Eye, ExternalLink, ImagePlus, Trash2 } from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
 import { Input } from "@/src/components/ui/Input";
 import { Select } from "@/src/components/ui/Select";
@@ -9,6 +9,7 @@ import { useToast } from "@/src/components/contexts/ToastContext";
 import type { Template, TemplateFormData } from "@/src/types";
 import { TEMPLATE_VARIABLES } from "@/src/lib/constants";
 import { ApiService } from "@/src/lib/api";
+import { RichTextEditor } from "./RichTextEditor";
 
 interface TemplateModalProps {
   isOpen: boolean;
@@ -31,16 +32,27 @@ export function TemplateModal({
     content: "",
     ctaText: "",
     ctaUrl: "",
+    bannerUrl: "",
   });
 
   const [showPreview, setShowPreview] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+
+  // Ref to the insert function exposed by RichTextEditor
+  const insertVariableFnRef = useRef<((variable: string) => void) | null>(null);
+
+  const handleInsertVariableReady = useCallback(
+    (fn: (variable: string) => void) => {
+      insertVariableFnRef.current = fn;
+    },
+    [],
+  );
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Vérifier la taille
     if (file.size > 15 * 1024 * 1024) {
       showToast(
         "error",
@@ -53,18 +65,13 @@ export function TemplateModal({
     try {
       setUploading(true);
       const response = await ApiService.uploadAttachment(file);
-
       if (response.success) {
-        setFormData({
-          ...formData,
-          attachment: response.data,
-        });
+        setFormData((prev) => ({ ...prev, attachment: response.data }));
         showToast("success", "Fichier uploadé", `${file.name} a été ajouté`);
       } else {
         showToast("error", "Erreur d'upload", response.message);
       }
     } catch (error: any) {
-      console.error("Erreur upload:", error);
       showToast("error", "Erreur", "Impossible d'uploader le fichier");
     } finally {
       setUploading(false);
@@ -73,23 +80,53 @@ export function TemplateModal({
 
   const handleRemoveAttachment = async () => {
     if (!formData.attachment) return;
-
     try {
       const filename = formData.attachment.url.split("/").pop();
-      if (filename) {
-        await ApiService.deleteAttachment(filename);
-      }
-
-      setFormData({
-        ...formData,
-        attachment: undefined,
-      });
-
+      if (filename) await ApiService.deleteAttachment(filename);
+      setFormData((prev) => ({ ...prev, attachment: undefined }));
       showToast("success", "Fichier supprimé", "La pièce jointe a été retirée");
-    } catch (error: any) {
-      console.error("Erreur suppression:", error);
+    } catch {
       showToast("error", "Erreur", "Impossible de supprimer le fichier");
     }
+  };
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      showToast(
+        "error",
+        "Fichier invalide",
+        "Seules les images sont acceptées pour la bannière",
+      );
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast(
+        "error",
+        "Fichier trop volumineux",
+        "La taille maximale est de 5MB",
+      );
+      return;
+    }
+    try {
+      setUploadingBanner(true);
+      const response = await ApiService.uploadAttachment(file);
+      if (response.success) {
+        setFormData((prev) => ({ ...prev, bannerUrl: response.data.url }));
+        showToast("success", "Bannière uploadée", "L'image a été ajoutée");
+      } else {
+        showToast("error", "Erreur d'upload", response.message);
+      }
+    } catch {
+      showToast("error", "Erreur", "Impossible d'uploader la bannière");
+    } finally {
+      setUploadingBanner(false);
+    }
+  };
+
+  const handleRemoveBanner = () => {
+    setFormData((prev) => ({ ...prev, bannerUrl: "" }));
   };
 
   useEffect(() => {
@@ -101,6 +138,7 @@ export function TemplateModal({
         content: template.content,
         ctaText: template.ctaText || "",
         ctaUrl: template.ctaUrl || "",
+        bannerUrl: template.bannerUrl || "",
         attachment: template.attachment,
       });
     } else {
@@ -111,6 +149,7 @@ export function TemplateModal({
         content: "",
         ctaText: "",
         ctaUrl: "",
+        bannerUrl: "",
       });
     }
     setShowPreview(false);
@@ -119,9 +158,6 @@ export function TemplateModal({
   if (!isOpen) return null;
 
   const handleSave = () => {
-    console.log("handleSave appelé avec:", formData);
-
-    // Validation
     if (!formData.name || !formData.content) {
       showToast(
         "error",
@@ -130,7 +166,6 @@ export function TemplateModal({
       );
       return;
     }
-
     if (formData.type === "email" && !formData.subject) {
       showToast(
         "error",
@@ -139,8 +174,6 @@ export function TemplateModal({
       );
       return;
     }
-
-    //  Validation CTA : Si un champ CTA est rempli, l'autre doit l'être aussi
     if (
       (formData.ctaText && !formData.ctaUrl) ||
       (!formData.ctaText && formData.ctaUrl)
@@ -152,26 +185,21 @@ export function TemplateModal({
       );
       return;
     }
-
-    console.log("Validation OK, appel onSave");
     onSave(formData);
   };
 
-  const insertVariable = (variable: string) => {
+  // SMS: insert at cursor via textarea ref
+  const insertVariableSMS = (variable: string) => {
     const textarea = document.getElementById("content") as HTMLTextAreaElement;
     if (!textarea) return;
-
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const text = formData.content;
-    const before = text.substring(0, start);
-    const after = text.substring(end);
-
-    setFormData({
-      ...formData,
+    const before = formData.content.substring(0, start);
+    const after = formData.content.substring(end);
+    setFormData((prev) => ({
+      ...prev,
       content: before + `{{${variable}}}` + after,
-    });
-
+    }));
     setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(
@@ -179,6 +207,14 @@ export function TemplateModal({
         start + variable.length + 4,
       );
     }, 0);
+  };
+
+  const handleInsertVariable = (variable: string) => {
+    if (formData.type === "email") {
+      insertVariableFnRef.current?.(variable);
+    } else {
+      insertVariableSMS(variable);
+    }
   };
 
   const previewContent = () => {
@@ -228,6 +264,7 @@ export function TemplateModal({
                 setFormData({
                   ...formData,
                   type: e.target.value as "sms" | "email",
+                  content: "",
                 })
               }
               options={[
@@ -235,7 +272,6 @@ export function TemplateModal({
                 { value: "email", label: "Email" },
               ]}
             />
-
             <Input
               label="Nom du template *"
               value={formData.name}
@@ -252,7 +288,7 @@ export function TemplateModal({
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">
                 Objet *
               </label>
-              <textarea
+              <input
                 value={formData.subject || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, subject: e.target.value })
@@ -275,7 +311,7 @@ export function TemplateModal({
               {TEMPLATE_VARIABLES.map((variable) => (
                 <button
                   key={variable.key}
-                  onClick={() => insertVariable(variable.key)}
+                  onClick={() => handleInsertVariable(variable.key)}
                   type="button"
                   className="px-3 py-1.5 bg-slate-800 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-400 rounded-lg text-sm font-medium transition-colors border border-slate-700 hover:border-indigo-500/50"
                 >
@@ -295,17 +331,29 @@ export function TemplateModal({
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide">
                 Contenu *
               </label>
-              <button
-                onClick={() => setShowPreview(!showPreview)}
-                type="button"
-                className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300"
-              >
-                <Eye className="w-3 h-3" />
-                {showPreview ? "Éditer" : "Prévisualiser"}
-              </button>
+              {formData.type === "sms" && (
+                <button
+                  onClick={() => setShowPreview(!showPreview)}
+                  type="button"
+                  className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300"
+                >
+                  <Eye className="w-3 h-3" />
+                  {showPreview ? "Éditer" : "Prévisualiser"}
+                </button>
+              )}
             </div>
 
-            {showPreview ? (
+            {formData.type === "email" ? (
+              // Rich text editor for email
+              <RichTextEditor
+                value={formData.content}
+                onChange={(html) =>
+                  setFormData((prev) => ({ ...prev, content: html }))
+                }
+                placeholder="Bonjour {{prenom}},&#10;&#10;Nous revenons vers vous..."
+                onInsertVariable={handleInsertVariableReady}
+              />
+            ) : showPreview ? (
               <div className="w-full bg-slate-900 border border-slate-700 rounded-lg p-4 min-h-[200px] text-sm text-slate-300 whitespace-pre-wrap">
                 {previewContent()}
               </div>
@@ -316,11 +364,7 @@ export function TemplateModal({
                 onChange={(e) =>
                   setFormData({ ...formData, content: e.target.value })
                 }
-                placeholder={
-                  formData.type === "sms"
-                    ? "Bonjour {{prenom}} {{nom}}, nous revenons vers vous concernant..."
-                    : "Bonjour {{prenom}},\n\nNous revenons vers vous..."
-                }
+                placeholder="Bonjour {{prenom}} {{nom}}, nous revenons vers vous concernant..."
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-colors min-h-[200px] resize-y"
               />
             )}
@@ -339,20 +383,66 @@ export function TemplateModal({
             )}
           </div>
 
-          {/*  CTA (Email only) */}
+          {/* Bannière (Email only) */}
           {formData.type === "email" && (
             <div className="border border-slate-700 rounded-lg p-4 bg-slate-900/50">
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <ImagePlus className="w-4 h-4 text-indigo-400" />
+                <label className="text-sm font-bold text-slate-300">
+                  Bannière (optionnel)
+                </label>
+              </div>
+              <p className="text-xs text-slate-500 mb-3">
+                Image affichée en haut de l'email — format recommandé :
+                600×200px
+              </p>
+              {formData.bannerUrl ? (
+                <div className="space-y-2">
+                  <img
+                    src={formData.bannerUrl}
+                    alt="Bannière"
+                    className="w-full rounded-lg border border-slate-700 object-cover max-h-32"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveBanner}
+                    className="flex items-center gap-1.5 text-red-500 hover:text-red-400 text-sm font-medium transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Supprimer la bannière
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <input
+                    type="file"
+                    onChange={handleBannerUpload}
+                    disabled={uploadingBanner}
+                    accept="image/*"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-500 file:text-white hover:file:bg-indigo-600 file:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                  {uploadingBanner && (
+                    <p className="text-xs text-indigo-400 mt-2">
+                      Upload en cours...
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* CTA (Email only) */}
+          {formData.type === "email" && (
+            <div className="border border-slate-700 rounded-lg p-4 bg-slate-900/50">
+              <div className="flex items-center gap-2 mb-3">
                 <ExternalLink className="w-4 h-4 text-indigo-400" />
                 <label className="text-sm font-bold text-slate-300">
                   Bouton d'action (optionnel)
                 </label>
               </div>
-              <p className="text-xs text-slate-500 mb-4">
-                Ajoutez un bouton cliquable pour inciter à l'action (prendre
-                RDV, demander un devis, etc.)
+              <p className="text-xs text-slate-500 mb-3">
+                Bouton centré affiché entre le contenu et la signature
               </p>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   label="Texte du bouton"
@@ -371,27 +461,140 @@ export function TemplateModal({
                   placeholder="https://calendly.com/..."
                 />
               </div>
-
               {formData.ctaText && formData.ctaUrl && (
-                <div className="mt-4 p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
-                  <p className="text-xs text-indigo-300 mb-2">
-                    Aperçu du bouton :
-                  </p>
-
-                  <a
-                    href={formData.ctaUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity"
-                  >
+                <div className="mt-4 flex justify-center p-4 bg-slate-800 rounded-lg">
+                  <span className="inline-block px-6 py-3 bg-[#F5771F] text-white font-semibold rounded text-sm">
                     {formData.ctaText}
-                  </a>
+                  </span>
                 </div>
               )}
             </div>
           )}
 
-          {/*  Pièce jointe (Email only) */}
+          {/* Preview email */}
+          {formData.type === "email" && (
+            <div className="border border-slate-700 rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowPreview(!showPreview)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-slate-900/50 hover:bg-slate-800 transition-colors text-sm font-medium text-slate-300"
+              >
+                <div className="flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-indigo-400" />
+                  Prévisualisation email
+                </div>
+                <span className="text-xs text-slate-500">
+                  {showPreview ? "Masquer" : "Afficher"}
+                </span>
+              </button>
+              {showPreview && (
+                <div className="bg-[#f4f4f4] p-4 max-h-[600px] overflow-y-auto">
+                  <div
+                    style={{
+                      maxWidth: 600,
+                      margin: "0 auto",
+                      backgroundColor: "#fff",
+                      borderRadius: 4,
+                      overflow: "hidden",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                    }}
+                  >
+                    {/* Orange bar */}
+                    <div style={{ backgroundColor: "#F5771F", height: 5 }} />
+                    {/* Banner */}
+                    {formData.bannerUrl && (
+                      <img
+                        src={formData.bannerUrl}
+                        alt="Bannière"
+                        style={{ width: "100%", display: "block" }}
+                      />
+                    )}
+                    {/* Content */}
+                    <div
+                      style={{
+                        padding: "40px 40px 32px",
+                        color: "#2d2d2d",
+                        lineHeight: 1.75,
+                        fontSize: 15,
+                      }}
+                      dangerouslySetInnerHTML={{ __html: formData.content }}
+                    />
+                    {/* CTA */}
+                    {formData.ctaText && formData.ctaUrl && (
+                      <div
+                        style={{
+                          padding: "8px 40px 40px",
+                          textAlign: "center",
+                        }}
+                      >
+                        <span
+                          style={{
+                            display: "inline-block",
+                            padding: "14px 40px",
+                            backgroundColor: "#F5771F",
+                            color: "#fff",
+                            borderRadius: 4,
+                            fontWeight: 700,
+                            fontSize: 15,
+                          }}
+                        >
+                          {formData.ctaText}
+                        </span>
+                      </div>
+                    )}
+                    {/* Divider */}
+                    <div
+                      style={{
+                        margin: "0 40px",
+                        height: 1,
+                        backgroundColor: "#f0f0f0",
+                      }}
+                    />
+                    {/* Footer */}
+                    <div
+                      style={{
+                        backgroundColor: "#f8f8f8",
+                        padding: "32px 40px",
+                        borderTop: "3px solid #F5771F",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <img
+                          src="https://fleuronindustries.fr/logo.png"
+                          alt="Fleuron Industries"
+                          style={{ width: 140, height: "auto" }}
+                        />
+                        <img
+                          src="https://fleuronindustries.fr/3660-badge.png"
+                          alt="3660"
+                          style={{ width: 130, height: "auto" }}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          marginTop: 16,
+                          fontSize: 11,
+                          color: "#9ca3af",
+                          textAlign: "center",
+                        }}
+                      >
+                        © {new Date().getFullYear()} Fleuron Industries SaS —
+                        Tous droits réservés
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Pièce jointe (Email only) */}
           {formData.type === "email" && (
             <div className="border border-slate-700 rounded-lg p-4 bg-slate-900/50">
               <label className="block text-sm font-medium text-slate-300 mb-2">

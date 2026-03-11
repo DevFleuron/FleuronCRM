@@ -120,32 +120,54 @@ async function updateCampaignStats(
   messageId?: string,
 ) {
   try {
-    const query: any = {
-      "recipients.leadId": leadId,
-      status: "sent",
-      type,
-    };
+    let campaign = null;
 
+    // Cherche d'abord par messageId (le plus fiable)
     if (messageId) {
-      query["recipients.messageId"] = messageId;
+      campaign = await Campaign.findOne({
+        "recipients.messageId": messageId,
+        type,
+      });
+      console.log(
+        "Recherche par messageId:",
+        messageId,
+        "→",
+        campaign?._id || "non trouvée",
+      );
     }
 
-    const campaign = await Campaign.findOne(query).sort({ sentAt: -1 });
+    // Fallback par leadId avec diagnostic
+    if (!campaign) {
+      console.log("Fallback leadId:", leadId.toString());
+      const allCampaigns = await Campaign.find({ type })
+        .select("_id status recipients sentAt")
+        .lean();
+      console.log(
+        "Campagnes dispo:",
+        JSON.stringify(
+          allCampaigns.map((c) => ({
+            id: c._id,
+            status: c.status,
+            recipientIds: c.recipients.map((r: any) => r.leadId?.toString()),
+            recipientMessageIds: c.recipients.map((r: any) => r.messageId),
+          })),
+          null,
+          2,
+        ),
+      );
 
-    console.log(
-      "Campaign trouvée:",
-      campaign?._id,
-      "pour lead:",
-      leadId,
-      "messageId:",
-      messageId,
-    );
+      campaign = await Campaign.findOne({
+        "recipients.leadId": leadId,
+        status: { $in: ["sent", "sending"] },
+        type,
+      }).sort({ sentAt: -1 });
+    }
 
+    console.log("Campaign finale:", campaign?._id || "undefined");
     if (!campaign) return;
 
     const inc: any = {};
     inc[`brevoStats.${eventType}`] = 1;
-
     await Campaign.updateOne({ _id: campaign._id }, { $inc: inc });
 
     const updated = await Campaign.findById(campaign._id);

@@ -70,10 +70,17 @@ export class BrevoService {
     subject: string,
     content: string,
     attachmentData?: { filename: string; path: string },
+    bannerUrl?: string,
+    ctaText?: string,
+    ctaUrl?: string,
   ) {
     try {
-      // Wrapper le contenu dans le template HTML stylisé
-      const htmlContent = getEmailTemplate(content);
+      const htmlContent = getEmailTemplate({
+        content,
+        bannerUrl,
+        ctaText,
+        ctaUrl,
+      });
 
       const emailData: any = {
         sender: {

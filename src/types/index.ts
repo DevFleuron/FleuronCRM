@@ -99,6 +99,7 @@ export interface Template {
   usageCount?: number;
   ctaText?: string;
   ctaUrl?: string;
+  bannerUrl?: string;
   attachment?: {
     filename: string;
     path: string;
@@ -115,6 +116,7 @@ export interface TemplateFormData {
   content: string;
   ctaText?: string;
   ctaUrl?: string;
+  bannerUrl?: string;
   attachment?: {
     filename: string;
     path: string;

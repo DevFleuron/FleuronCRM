@@ -213,6 +213,15 @@ export class ApiService {
     });
   }
 
+  static async uploadBanner(file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+    return this.fetchApi(`/api/upload/attachment`, {
+      method: "POST",
+      body: formData,
+    });
+  }
+
   static async deleteAttachment(filename: string) {
     return this.fetchApi(`/api/upload/attachment/${filename}`, {
       method: "DELETE",

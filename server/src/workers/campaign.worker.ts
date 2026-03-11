@@ -1,7 +1,7 @@
 import Campaign from "../models/Campaign.model";
 import Lead from "../models/Lead.model";
 import { BrevoService } from "../services/brevo.service";
-import { addCallToAction } from "../templates/email-layout";
+import path from "path";
 
 /*
  * Traiter l'envoi d'une campagne
@@ -91,20 +91,34 @@ export async function processCampaignSending(campaignId: string) {
             lead,
           );
 
-          // Ajouter le CTA si présent
-          if (template.ctaText && template.ctaUrl) {
-            content = addCallToAction(
-              content,
-              template.ctaText,
-              template.ctaUrl,
-            );
-          }
+          // Reconstruire le path de la pièce jointe depuis le filename
+          // (le path absolu stocké en DB peut être invalide après déploiement)
+          const attachmentData = template.attachment?.url
+            ? {
+                filename: template.attachment.filename,
+                path: path.join(
+                  __dirname,
+                  "../../uploads/attachments",
+                  template.attachment.url.split("/").pop()!,
+                ),
+              }
+            : undefined;
+
+          // Rendre la bannerUrl absolue pour Brevo
+          const appUrl =
+            process.env.APP_URL || "https://crm.fleuronindustries.fr";
+          const absoluteBannerUrl = template.bannerUrl?.startsWith("/")
+            ? `${appUrl}${template.bannerUrl}`
+            : template.bannerUrl;
 
           result = await BrevoService.sendEmail(
             lead.email,
             subject,
             content,
-            template.attachment,
+            attachmentData,
+            absoluteBannerUrl,
+            template.ctaText,
+            template.ctaUrl,
           );
         }
 

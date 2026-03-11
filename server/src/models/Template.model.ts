@@ -11,6 +11,7 @@ export interface ITemplate extends Document {
   ctaUrl?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  bannerUrl?: string;
   attachment?: {
     filename: string;
     path: string;
@@ -53,6 +54,10 @@ const TemplateSchema = new Schema<ITemplate>(
       trim: true,
     },
     ctaUrl: {
+      type: String,
+      trim: true,
+    },
+    bannerUrl: {
       type: String,
       trim: true,
     },
