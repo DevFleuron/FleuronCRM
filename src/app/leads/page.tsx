@@ -1,133 +1,134 @@
-"use client";
+'use client'
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { LeadFiltersBar } from "@/src/components/features/leads/LeadFilters";
-import { LeadTable } from "@/src/components/features/leads/LeadTable";
-import { LeadImportModal } from "@/src/components/features/leads/LeadImportModal";
-import { useToast } from "@/src/components/contexts/ToastContext";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { Lead, LeadFilters } from "@/src/types";
-import { ApiService } from "@/src/lib/api";
+import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { LeadFiltersBar } from '@/src/components/features/leads/LeadFilters'
+import { LeadTable } from '@/src/components/features/leads/LeadTable'
+import { LeadImportModal } from '@/src/components/features/leads/LeadImportModal'
+import { useToast } from '@/src/components/contexts/ToastContext'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import type { Lead, LeadFilters } from '@/src/types'
+import { ApiService } from '@/src/lib/api'
+
+const LIMIT_OPTIONS = [25, 50, 100, 250]
 
 export default function LeadsPage() {
-  const { showToast } = useToast();
-  const [filters, setFilters] = useState<LeadFilters>({});
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
-  const [page, setPage] = useState(1);
+  const { showToast } = useToast()
+  const [filters, setFilters] = useState<LeadFilters>({})
+  const [leads, setLeads] = useState<Lead[]>([])
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null)
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(50)
   const [pagination, setPagination] = useState({
     total: 0,
     totalPages: 1,
     page: 1,
     limit: 50,
-  });
+  })
   const loadLeads = useCallback(
-    async (currentPage = 1, currentFilters = filters) => {
+    async (currentPage = 1, currentFilters = filters, currentLimit = limit) => {
       try {
-        setLoading(true);
+        setLoading(true)
         // Nettoyer les filtres undefined/vides
-        const cleanFilters: any = { page: currentPage };
+        const cleanFilters: any = { page: currentPage, limit: currentLimit }
         Object.entries(currentFilters).forEach(([key, val]) => {
-          if (val !== undefined && val !== "" && val !== null) {
-            cleanFilters[key] = val;
+          if (val !== undefined && val !== '' && val !== null) {
+            cleanFilters[key] = val
           }
-        });
-        const response = await ApiService.getLeads(cleanFilters);
+        })
+        const response = await ApiService.getLeads(cleanFilters)
         if (response.success) {
-          setLeads(response.data);
-          setPagination(response.pagination);
+          setLeads(response.data)
+          setPagination(response.pagination)
         } else {
-          showToast("error", "Erreur", "Impossible de charger les leads");
+          showToast('error', 'Erreur', 'Impossible de charger les leads')
         }
       } catch (error) {
-        console.error("Erreur loadLeads:", error);
-        showToast("error", "Erreur", "Erreur lors du chargement des leads");
+        console.error('Erreur loadLeads:', error)
+        showToast('error', 'Erreur', 'Erreur lors du chargement des leads')
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     },
-    [],
-  );
+    []
+  )
 
   useEffect(() => {
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current)
 
     searchTimeout.current = setTimeout(
       () => {
-        loadLeads(1, filters);
-        setPage(1);
+        loadLeads(1, filters)
+        setPage(1)
       },
-      filters.search ? 400 : 0,
-    );
+      filters.search ? 400 : 0
+    )
 
     return () => {
-      if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    };
-  }, [filters]);
+      if (searchTimeout.current) clearTimeout(searchTimeout.current)
+    }
+  }, [filters])
 
   const handlePageChange = (newPage: number) => {
-    setPage(newPage);
-    loadLeads(newPage, filters);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+    setPage(newPage)
+    loadLeads(newPage, filters)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const handleToggleSelect = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
-    );
-  };
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]))
+  }
 
   const handleToggleSelectAll = () => {
     if (selectedIds.length === leads.length) {
-      setSelectedIds([]);
+      setSelectedIds([])
     } else {
-      setSelectedIds(leads.map((lead) => lead._id!));
+      setSelectedIds(leads.map((lead) => lead._id!))
     }
-  };
+  }
 
   const handleResetFilters = () => {
-    setFilters({});
-    setPage(1);
-  };
+    setFilters({})
+    setPage(1)
+  }
 
   const handleImport = async (file: File) => {
     try {
-      const response = await ApiService.importCSV(file);
+      const response = await ApiService.importCSV(file)
       if (response.success) {
-        showToast("success", "Import réussi !", response.message);
-        await loadLeads(1, filters);
+        showToast('success', 'Import réussi !', response.message)
+        await loadLeads(1, filters)
       } else {
-        showToast("error", "Erreur d'import", response.message);
+        showToast('error', "Erreur d'import", response.message)
       }
     } catch (error: any) {
-      showToast("error", "Erreur", error.message || "Erreur lors de l'import");
+      showToast('error', 'Erreur', error.message || "Erreur lors de l'import")
     }
-  };
+  }
 
   // Génère les numéros de pages à afficher
   const getPageNumbers = () => {
-    const delta = 2;
-    const range: number[] = [];
+    const delta = 2
+    const range: number[] = []
     for (
       let i = Math.max(1, page - delta);
       i <= Math.min(pagination.totalPages, page + delta);
       i++
     ) {
-      range.push(i);
+      range.push(i)
     }
     if (range[0] > 1) {
-      if (range[0] > 2) range.unshift(-1); // ellipsis
-      range.unshift(1);
+      if (range[0] > 2) range.unshift(-1) // ellipsis
+      range.unshift(1)
     }
     if (range[range.length - 1] < pagination.totalPages) {
-      if (range[range.length - 1] < pagination.totalPages - 1) range.push(-1);
-      range.push(pagination.totalPages);
+      if (range[range.length - 1] < pagination.totalPages - 1) range.push(-1)
+      range.push(pagination.totalPages)
     }
-    return range;
-  };
+    return range
+  }
 
   if (loading) {
     return (
@@ -137,7 +138,7 @@ export default function LeadsPage() {
           <p className="text-slate-400">Chargement des leads...</p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -147,6 +148,29 @@ export default function LeadsPage() {
         <p className="text-text-secondary text-sm md:text-base">
           Gestion et relance des clients ({pagination.total} leads)
         </p>
+      </div>
+
+      <div className="flex items-center gap-2 justify-start">
+        <span className="text-sm text-slate-400">Leads par page</span>
+        <div className="flex gap-1">
+          {LIMIT_OPTIONS.map((n) => (
+            <button
+              key={n}
+              onClick={() => {
+                setLimit(n)
+                setPage(1)
+                loadLeads(1, filters, n)
+              }}
+              className={`w-10 h-8 rounded-lg text-sm font-semibold transition-colors ${
+                limit === n
+                  ? 'bg-brand-primary text-white'
+                  : 'hover:bg-indigo-600 text-slate-400 border border-slate-700'
+              }`}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
       </div>
 
       <LeadFiltersBar
@@ -162,19 +186,11 @@ export default function LeadsPage() {
         selectedIds={selectedIds}
         onToggleSelect={handleToggleSelect}
         onToggleSelectAll={handleToggleSelectAll}
-        onSendSMS={(lead) =>
-          showToast("info", "SMS", `SMS à ${lead.prenom} ${lead.nom}`)
-        }
-        onSendEmail={(lead) =>
-          showToast("info", "Email", `Email à ${lead.prenom} ${lead.nom}`)
-        }
-        onViewDetails={(lead) => console.log("View details:", lead)}
-        onBulkSMS={() =>
-          showToast("info", "SMS groupé", `${selectedIds.length} SMS`)
-        }
-        onBulkEmail={() =>
-          showToast("info", "Email groupé", `${selectedIds.length} emails`)
-        }
+        onSendSMS={(lead) => showToast('info', 'SMS', `SMS à ${lead.prenom} ${lead.nom}`)}
+        onSendEmail={(lead) => showToast('info', 'Email', `Email à ${lead.prenom} ${lead.nom}`)}
+        onViewDetails={(lead) => console.log('View details:', lead)}
+        onBulkSMS={() => showToast('info', 'SMS groupé', `${selectedIds.length} SMS`)}
+        onBulkEmail={() => showToast('info', 'Email groupé', `${selectedIds.length} emails`)}
       />
 
       {/* Pagination */}
@@ -203,13 +219,13 @@ export default function LeadsPage() {
                   onClick={() => handlePageChange(num)}
                   className={`w-9 h-9 rounded-lg text-sm font-semibold transition-colors ${
                     num === page
-                      ? "bg-brand-primary text-white"
-                      : "hover:bg-indigo-600 text-slate-400"
+                      ? 'bg-brand-primary text-white'
+                      : 'hover:bg-indigo-600 text-slate-400'
                   }`}
                 >
                   {num}
                 </button>
-              ),
+              )
             )}
 
             <button
@@ -229,5 +245,5 @@ export default function LeadsPage() {
         onImport={handleImport}
       />
     </div>
-  );
+  )
 }
