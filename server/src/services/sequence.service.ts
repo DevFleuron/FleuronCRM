@@ -2,7 +2,7 @@ import SequenceCampaign from "../models/SequenceCampaign.model";
 import Lead from "../models/Lead.model";
 import Template from "../models/Template.model";
 import { BrevoService } from "./brevo.service";
-import { isNRPStatus } from "../utils/lead.utils";
+import { isNRPStatus, shouldContinueSequence } from "../utils/lead.utils";
 
 export class SequenceService {
   /**
@@ -97,7 +97,7 @@ export class SequenceService {
           }
 
           // Arrêter si le lead n'est plus NRP (NRP, NRP 1, NRP 2, etc.)
-          if (!isNRPStatus(lead.rapport)) {
+          if (!shouldContinueSequence(lead.rapport)) {
             console.log(
               `\nLead ${recipient.leadRef} n'est plus NRP (${lead.rapport})`,
             );
@@ -253,7 +253,7 @@ export class SequenceService {
   static async checkAndStopSequences(leadId: string, newStatus: string) {
     try {
       // Si le lead reste NRP (NRP, NRP 1, NRP 2, etc.), ne rien faire
-      if (isNRPStatus(newStatus)) {
+      if (shouldContinueSequence(newStatus)) {
         return;
       }
 
@@ -290,4 +290,40 @@ export class SequenceService {
       console.error("Erreur checkAndStopSequences:", error);
     }
   }
+
+  static async stopLeadByPhone(
+    phone: string,
+  ): Promise<{ stopped: number; leadRef: string | null }> {
+    try {
+      const cleaned = formatPhoneForSearch(phone);
+      const withSpaces = formatPhoneWithSpaces(cleaned);
+
+      const lead = await Lead.findOne({
+        mobile: { $in: [cleaned, withSpaces] },
+      });
+
+      if (!lead) {
+        console.warn(`[SMS Inbound] Lead introuvable pour: ${phone}`);
+        return { stopped: 0, leadRef: null };
+      }
+
+      await this.checkAndStopSequences(lead._id.toString(), "REPLIED_SMS");
+
+      console.log(`[SMS Inbound] Lead ${lead.ref} sorti des campagnes actives`);
+      return { stopped: 1, leadRef: lead.ref };
+    } catch (error: any) {
+      console.error("Erreur stopLeadByPhone:", error);
+      return { stopped: 0, leadRef: null };
+    }
+  }
+}
+
+function formatPhoneForSearch(phone: string): string {
+  let cleaned = phone.replace(/\D/g, "");
+  if (cleaned.startsWith("33")) cleaned = "0" + cleaned.substring(2);
+  return cleaned;
+}
+
+function formatPhoneWithSpaces(digits: string): string {
+  return digits.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
 }

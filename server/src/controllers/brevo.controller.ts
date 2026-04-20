@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Lead from "../models/Lead.model";
 import Campaign from "../models/Campaign.model";
+import { SequenceService } from "../services/sequence.service";
 
 export const handleBrevoWebhook = async (
   req: Request,
@@ -105,7 +106,30 @@ export const handleBrevoWebhook = async (
       if (lead)
         await updateCampaignStats(lead._id, "delivered", "sms", messageId);
     }
-
+    // Réponse SMS entrant → sortir le lead de toutes les séquences actives
+    if (event.event === "inboundSms" && event.from) {
+      const { leadRef, stopped } = await SequenceService.stopLeadByPhone(
+        event.from,
+      );
+      console.log(
+        `[SMS Inbound] Lead: ${leadRef || "inconnu"}, séquences stoppées: ${stopped}`,
+      );
+    }
+    // Réponse email entrant → sortir le lead de toutes les séquences actives
+    if (event.event === "inboundEmail" && event.email) {
+      const lead = await Lead.findOne({ email: event.email });
+      if (lead) {
+        await SequenceService.checkAndStopSequences(
+          lead._id.toString(),
+          "REPLIED_EMAIL",
+        );
+        console.log(
+          `[Email Inbound] Lead ${lead.ref} sorti des campagnes actives`,
+        );
+      } else {
+        console.warn(`[Email Inbound] Lead introuvable pour: ${event.email}`);
+      }
+    }
     res.status(200).json({ success: true });
   } catch (error: any) {
     console.error("Erreur handleBrevoWebhook:", error);

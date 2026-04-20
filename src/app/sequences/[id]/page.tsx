@@ -321,7 +321,7 @@ export default function SequenceDetailsPage() {
               {filteredRecipients.map((recipient) => {
                 const lead = recipient.leadId as any;
                 return (
-                  <tr key={recipient.leadId as any} className="text-sm">
+                  <tr key={recipient.leadRef} className="text-sm">
                     <td className="py-3">
                       <span className="font-medium">{recipient.leadRef}</span>
                     </td>
@@ -377,7 +377,7 @@ export default function SequenceDetailsPage() {
         <div className="md:hidden space-y-3">
           {filteredRecipients.map((recipient) => (
             <div
-              key={recipient.leadId as any}
+              key={recipient.leadRef}
               className="bg-slate-900/50 border border-slate-700 rounded-lg p-4"
             >
               <div className="flex items-center justify-between mb-3">

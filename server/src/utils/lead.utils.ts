@@ -1,25 +1,36 @@
-/*
- * Vérifier si un statut est un NRP (NRP, NRP 1, NRP 2, etc.)
- */
-
 export function isNRPStatus(status: string): boolean {
   if (!status) return false;
-
-  const normalizedStatus = status.trim().toUpperCase();
-
+  const s = status.trim().toUpperCase();
   return (
-    normalizedStatus === "NRP" ||
-    normalizedStatus === "NRP 1" ||
-    normalizedStatus === "NRP 2" ||
-    normalizedStatus === "NRP 3" ||
-    normalizedStatus === "NRP 4" ||
-    normalizedStatus === "NRP 5"
+    s === "NRP" ||
+    s === "NRP 1" ||
+    s === "NRP 2" ||
+    s === "NRP 3" ||
+    s === "NRP 4" ||
+    s === "NRP 5"
   );
 }
 
-/**
- * Vérifier si c'est une transition qui sort du NRP
- */
+export function shouldContinueSequence(status: string): boolean {
+  if (!status) return false;
+  const s = status.trim().toUpperCase();
+  return (
+    s === "NOUVEAU PROSPECT" ||
+    s === "LEAD" ||
+    s === "NRP" ||
+    s === "NRP 1" ||
+    s === "NRP 2" ||
+    s === "NRP 3" ||
+    s === "NRP 4" ||
+    s === "NRP 5" ||
+    s === "PROSPECT A RETRAITER" ||
+    s === "DOUBLON" ||
+    s === "JUSTE DES RENSEIGNEMENT" ||
+    s === "PAS FAIS DE DEMANDE" ||
+    s === "ANNULE"
+  );
+}
+
 export function isLeavingNRP(oldStatus: string, newStatus: string): boolean {
   return isNRPStatus(oldStatus) && !isNRPStatus(newStatus);
 }

@@ -96,7 +96,7 @@ const ImportHistorySchema: Schema = new Schema(
           newValue: { type: String },
           action: {
             type: String,
-            enum: ["updated", "removed_from_campaigns", "duplicate", "none"], // "duplicate" manquant
+            enum: ["updated", "removed_from_campaigns", "duplicate", "none"],
             default: "updated",
           },
           timestamp: { type: Date, default: Date.now },

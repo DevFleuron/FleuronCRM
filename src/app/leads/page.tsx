@@ -119,7 +119,7 @@ export default function LeadsPage() {
       range.push(i);
     }
     if (range[0] > 1) {
-      if (range[0] > 2) range.unshift(-1); // ellipsis
+      if (range[0] > 2) range.unshift(-1);
       range.unshift(1);
     }
     if (range[range.length - 1] < pagination.totalPages) {
