@@ -9,6 +9,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Lead, LeadFilters } from "@/src/types";
 import { ApiService } from "@/src/lib/api";
 
+const LIMIT_OPTIONS = [25, 50, 100, 250];
+
 export default function LeadsPage() {
   const { showToast } = useToast();
   const [filters, setFilters] = useState<LeadFilters>({});
@@ -18,6 +20,7 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(50);
   const [pagination, setPagination] = useState({
     total: 0,
     totalPages: 1,
@@ -25,11 +28,11 @@ export default function LeadsPage() {
     limit: 50,
   });
   const loadLeads = useCallback(
-    async (currentPage = 1, currentFilters = filters) => {
+    async (currentPage = 1, currentFilters = filters, currentLimit = limit) => {
       try {
         setLoading(true);
         // Nettoyer les filtres undefined/vides
-        const cleanFilters: any = { page: currentPage };
+        const cleanFilters: any = { page: currentPage, limit: currentLimit };
         Object.entries(currentFilters).forEach(([key, val]) => {
           if (val !== undefined && val !== "" && val !== null) {
             cleanFilters[key] = val;
@@ -147,6 +150,29 @@ export default function LeadsPage() {
         <p className="text-text-secondary text-sm md:text-base">
           Gestion et relance des clients ({pagination.total} leads)
         </p>
+      </div>
+
+      <div className="flex items-center gap-2 justify-start">
+        <span className="text-sm text-slate-400">Leads par page</span>
+        <div className="flex gap-1">
+          {LIMIT_OPTIONS.map((n) => (
+            <button
+              key={n}
+              onClick={() => {
+                setLimit(n);
+                setPage(1);
+                loadLeads(1, filters, n);
+              }}
+              className={`w-10 h-8 rounded-lg text-sm font-semibold transition-colors ${
+                limit === n
+                  ? "bg-brand-primary text-white"
+                  : "hover:bg-indigo-600 text-slate-400 border border-slate-700"
+              }`}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
       </div>
 
       <LeadFiltersBar
