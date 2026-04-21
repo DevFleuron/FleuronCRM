@@ -23,8 +23,32 @@ export class SequenceService {
       // Récupérer les leads
       const leads = await Lead.find({ _id: { $in: leadIds } });
 
+      // Vérifier si des leads sont déjà dans une séquence active
+      const alreadyInSequence = await SequenceCampaign.find({
+        status: "active",
+        "recipients.leadId": { $in: leads.map((l) => l._id) },
+        "recipients.status": { $in: ["pending", "in_progress"] },
+      });
+
+      const excludedLeadIds = new Set<string>();
+      for (const campaign of alreadyInSequence) {
+        for (const recipient of campaign.recipients) {
+          if (["pending", "in_progress"].includes(recipient.status)) {
+            excludedLeadIds.add(recipient.leadId.toString());
+            console.log(
+              `Lead ${recipient.leadRef} déjà dans la séquence "${campaign.name}", exclu`,
+            );
+          }
+        }
+      }
+
+      // Filtrer les leads déjà dans une séquence
+      const eligibleLeads = leads.filter(
+        (l) => !excludedLeadIds.has(l._id.toString()),
+      );
+
       // Créer les recipients
-      const recipients = leads.map((lead) => ({
+      const recipients = eligibleLeads.map((lead) => ({
         leadId: lead._id,
         leadRef: lead.ref,
         status: "pending",
@@ -49,9 +73,11 @@ export class SequenceService {
         startedAt: new Date(),
       });
 
-      console.log(`Séquence "${name}" créée avec ${leads.length} leads`);
+      console.log(
+        `Séquence "${name}" créée avec ${eligibleLeads.length} leads (${excludedLeadIds.size} exclus car déjà en séquence)`,
+      );
 
-      return { success: true, data: sequence };
+      return { success: true, data: sequence, excluded: excludedLeadIds.size };
     } catch (error: any) {
       console.error("Erreur createSequence:", error);
       return { success: false, error: error.message };
