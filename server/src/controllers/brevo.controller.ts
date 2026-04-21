@@ -117,8 +117,9 @@ export const handleBrevoWebhook = async (
     }
     // Réponse email entrant → sortir le lead de toutes les séquences actives
     if (event.event === "inboundEmail" && event.email) {
-      const lead = await Lead.findOne({ email: event.email });
-      if (lead) {
+      const leads = await Lead.find({ email: event.email });
+
+      for (const lead of leads) {
         await SequenceService.checkAndStopSequences(
           lead._id.toString(),
           "REPLIED_EMAIL",
@@ -126,7 +127,9 @@ export const handleBrevoWebhook = async (
         console.log(
           `[Email Inbound] Lead ${lead.ref} sorti des campagnes actives`,
         );
-      } else {
+      }
+
+      if (leads.length === 0) {
         console.warn(`[Email Inbound] Lead introuvable pour: ${event.email}`);
       }
     }

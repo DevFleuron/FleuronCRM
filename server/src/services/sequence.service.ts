@@ -298,19 +298,23 @@ export class SequenceService {
       const cleaned = formatPhoneForSearch(phone);
       const withSpaces = formatPhoneWithSpaces(cleaned);
 
-      const lead = await Lead.findOne({
+      const leads = await Lead.find({
         mobile: { $in: [cleaned, withSpaces] },
       });
 
-      if (!lead) {
+      if (leads.length === 0) {
         console.warn(`[SMS Inbound] Lead introuvable pour: ${phone}`);
         return { stopped: 0, leadRef: null };
       }
 
-      await this.checkAndStopSequences(lead._id.toString(), "REPLIED_SMS");
+      for (const lead of leads) {
+        await this.checkAndStopSequences(lead._id.toString(), "REPLIED_SMS");
+        console.log(
+          `[SMS Inbound] Lead ${lead.ref} sorti des campagnes actives`,
+        );
+      }
 
-      console.log(`[SMS Inbound] Lead ${lead.ref} sorti des campagnes actives`);
-      return { stopped: 1, leadRef: lead.ref };
+      return { stopped: leads.length, leadRef: leads[0].ref };
     } catch (error: any) {
       console.error("Erreur stopLeadByPhone:", error);
       return { stopped: 0, leadRef: null };
