@@ -42,6 +42,22 @@ export class SequenceService {
         }
       }
 
+      // Bloquer si des leads sont déjà dans une séquence active
+      if (excludedLeadIds.size > 0) {
+        const excludedLeads = leads.filter((l) =>
+          excludedLeadIds.has(l._id.toString()),
+        );
+        const excludedNames = excludedLeads.map(
+          (l) => `${l.prenom} ${l.nom} (${l.ref})`,
+        );
+
+        return {
+          success: false,
+          error: "LEADS_ALREADY_IN_SEQUENCE",
+          message: `${excludedLeadIds.size} lead(s) sont déjà dans une séquence active`,
+          excludedLeads: excludedNames,
+        };
+      }
       // Filtrer les leads déjà dans une séquence
       const eligibleLeads = leads.filter(
         (l) => !excludedLeadIds.has(l._id.toString()),

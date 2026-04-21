@@ -202,6 +202,10 @@ export default function NewSequencePage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [filters, setFilters] = useState<LeadFilters>({});
+  const [sequenceError, setSequenceError] = useState<{
+    message: string;
+    excludedLeads: string[];
+  } | null>(null);
 
   // Steps avec ID unique pour le drag & drop
   const [steps, setSteps] = useState<Step[]>([
@@ -393,10 +397,16 @@ export default function NewSequencePage() {
         showToast(
           "success",
           "Séquence créée",
-          `La séquence "${sequenceName}" a été lancée avec ${selectedLeadIds.length} leads`,
+          `La séquence "${sequenceName}" a été lancée`,
         );
         await new Promise((resolve) => setTimeout(resolve, 1500));
         router.push("/sequences");
+      } else if (response.error === "LEADS_ALREADY_IN_SEQUENCE") {
+        setSequenceError({
+          message: response.message,
+          excludedLeads: response.excludedLeads || [],
+        });
+        window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
         showToast(
           "error",
@@ -411,7 +421,6 @@ export default function NewSequencePage() {
       setIsSubmitting(false);
     }
   };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -440,6 +449,35 @@ export default function NewSequencePage() {
           </p>
         </div>
       </div>
+
+      {/* Bannière erreur leads déjà en séquence */}
+      {sequenceError && (
+        <div className="bg-error/10 border border-error/30 rounded-2xl p-6">
+          <h3 className="text-error font-semibold mb-3">
+            ⚠️ {sequenceError.message}
+          </h3>
+          <p className="text-sm text-slate-400 mb-2">
+            Les leads suivants sont déjà dans une séquence active :
+          </p>
+          <ul className="space-y-1">
+            {sequenceError.excludedLeads.map((lead, i) => (
+              <li
+                key={i}
+                className="text-sm text-slate-300 flex items-center gap-2"
+              >
+                <span className="text-error">•</span>
+                {lead}
+              </li>
+            ))}
+          </ul>
+          <button
+            onClick={() => setSequenceError(null)}
+            className="mt-4 text-sm text-slate-400 hover:text-slate-200"
+          >
+            Fermer
+          </button>
+        </div>
+      )}
 
       {/* Nom */}
       <div className="bg-[#111114] border border-slate-800 rounded-2xl p-6">
