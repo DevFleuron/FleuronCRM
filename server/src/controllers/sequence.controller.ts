@@ -32,7 +32,9 @@ export const createSequence = async (
     if (!result.success) {
       res.status(400).json({
         success: false,
-        message: result.error,
+        message: result.message || result.error,
+        error: result.error,
+        excludedLeads: result.excludedLeads,
       });
       return;
     }
