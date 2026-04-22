@@ -36,7 +36,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         </button>
 
         <div className="flex items-center gap-2 bg-surface-secondary/40 p-1.5 pr-3 rounded-full border border-border-primary">
-          <div className="w-8 h-8 rounded-full bg-brand-primary flex items-center justify-center text-xs font-bold shadow-lg flex-shrink-0">
+          <div className="w-8 h-8 rounded-full bg-brand-primary flex items-center justify-center text-xs font-bold shadow-lg shrink-0">
             {initials}
           </div>
           <div className="flex flex-col">
@@ -53,7 +53,7 @@ export function Header({ onMenuClick }: HeaderProps) {
       {/* Desktop */}
       <div className="hidden lg:flex items-center justify-end w-full">
         <div className="flex items-center gap-3 bg-surface-secondary/40 p-1.5 pr-4 rounded-full border border-border-primary">
-          <div className="w-8 h-8 rounded-full bg-brand-primary flex items-center justify-center text-sm font-bold shadow-lg flex-shrink-0">
+          <div className="w-8 h-8 rounded-full bg-brand-primary flex items-center justify-center text-sm font-bold shadow-lg shrink-0">
             {initials}
           </div>
           <div className="flex flex-col">

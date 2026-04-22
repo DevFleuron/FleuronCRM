@@ -65,71 +65,75 @@ export function SelectableLeadTable({
 
       {/* Table Desktop */}
       <div className="hidden lg:block overflow-x-auto">
-        <table className="w-full">
-          <thead className="border-b border-slate-700">
-            <tr className="text-left text-sm text-slate-400">
-              <th className="pb-3 font-medium w-12"></th>
-              <th className="pb-3 font-medium">Référence</th>
-              <th className="pb-3 font-medium">Date</th>
-              <th className="pb-3 font-medium">Nom</th>
-              <th className="pb-3 font-medium">Contact</th>
-              <th className="pb-3 font-medium">Source</th>
-              <th className="pb-3 font-medium">Statut</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800">
-            {leads.map((lead) => (
-              <tr
-                key={lead._id}
-                className="text-sm hover:bg-slate-900/50 transition-colors cursor-pointer"
-                onClick={() => onToggleSelect(lead._id!)}
-              >
-                <td className="py-3">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.includes(lead._id!)}
-                    onChange={() => onToggleSelect(lead._id!)}
-                    onClick={(e) => e.stopPropagation()}
-                    className="w-5 h-5 rounded border-slate-600 text-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-                  />
-                </td>
-                <td className="py-3">
-                  <span className="font-medium text-indigo-400">
-                    {lead.ref}
-                  </span>
-                </td>
-                <td className="py-3">
-                  <div className="text-xs text-slate-400">
-                    {formatDate(lead.date)}
-                  </div>
-                </td>
-                <td className="py-3">
-                  <div className="font-medium">
-                    {lead.prenom} {lead.nom}
-                  </div>
-                </td>
-                <td className="py-3">
-                  <div className="text-xs">
-                    <div className="text-slate-300">{lead.mobile}</div>
-                    {lead.email && (
-                      <div className="text-slate-500">{lead.email}</div>
-                    )}
-                  </div>
-                </td>
-                <td className="py-3">
-                  <span className="text-slate-400 text-xs">{lead.source}</span>
-                </td>
-                <td className="py-3">
-                  <span
-                    className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(lead.rapport)}`}
-                  >
-                    {lead.rapport}
-                  </span>
-                </td>
+        <div className="hidden lg:block overflow-x-auto max-h-125 overflow-y-auto">
+          <table className="w-full">
+            <thead className="border-b border-slate-700">
+              <tr className="text-left text-sm text-slate-400">
+                <th className="pb-3 font-medium w-12"></th>
+                <th className="pb-3 font-medium">Référence</th>
+                <th className="pb-3 font-medium">Date</th>
+                <th className="pb-3 font-medium">Nom</th>
+                <th className="pb-3 font-medium">Contact</th>
+                <th className="pb-3 font-medium">Source</th>
+                <th className="pb-3 font-medium">Statut</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-800">
+              {leads.map((lead) => (
+                <tr
+                  key={lead._id}
+                  className="text-sm hover:bg-slate-900/50 transition-colors cursor-pointer"
+                  onClick={() => onToggleSelect(lead._id!)}
+                >
+                  <td className="py-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(lead._id!)}
+                      onChange={() => onToggleSelect(lead._id!)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-5 h-5 rounded border-slate-600 text-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                    />
+                  </td>
+                  <td className="py-3">
+                    <span className="font-medium text-indigo-400">
+                      {lead.ref}
+                    </span>
+                  </td>
+                  <td className="py-3">
+                    <div className="text-xs text-slate-400">
+                      {formatDate(lead.date)}
+                    </div>
+                  </td>
+                  <td className="py-3">
+                    <div className="font-medium">
+                      {lead.prenom} {lead.nom}
+                    </div>
+                  </td>
+                  <td className="py-3">
+                    <div className="text-xs">
+                      <div className="text-slate-300">{lead.mobile}</div>
+                      {lead.email && (
+                        <div className="text-slate-500">{lead.email}</div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="py-3">
+                    <span className="text-slate-400 text-xs">
+                      {lead.source}
+                    </span>
+                  </td>
+                  <td className="py-3">
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(lead.rapport)}`}
+                    >
+                      {lead.rapport}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Cards Mobile */}

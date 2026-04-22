@@ -53,7 +53,10 @@ export function LeadFiltersBar({
 
   return (
     <div className="card-base space-y-4">
-      <div className="flex items-center justify-between">
+      <div
+        className="flex items-center justify-between cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
         <div className="flex items-center gap-3">
           <Filter className="w-5 h-5 text-brand-primary" />
           <h3 className="text-lg font-bold">Filtres</h3>
@@ -68,32 +71,34 @@ export function LeadFiltersBar({
             {resultsCount} résultat{resultsCount > 1 ? "s" : ""}
           </span>
           {onImport && (
-            <Button variant="secondary" size="sm" onClick={onImport}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onImport();
+              }}
+            >
               <Upload className="w-4 h-4" />
               Importer CSV
             </Button>
           )}
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="p-2 hover:bg-surface-hover rounded-lg transition-colors"
+          <svg
+            className={cn(
+              "w-5 h-5 transition-transform",
+              isExpanded && "rotate-180",
+            )}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
           >
-            <svg
-              className={cn(
-                "w-5 h-5 transition-transform",
-                isExpanded && "rotate-180",
-              )}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </button>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
         </div>
       </div>
 

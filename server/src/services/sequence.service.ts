@@ -31,13 +31,13 @@ export class SequenceService {
       });
 
       const excludedLeadIds = new Set<string>();
+      const leadSequenceMap = new Map<string, string>(); // leadId → nom de séquence
+
       for (const campaign of alreadyInSequence) {
         for (const recipient of campaign.recipients) {
           if (["pending", "in_progress"].includes(recipient.status)) {
             excludedLeadIds.add(recipient.leadId.toString());
-            console.log(
-              `Lead ${recipient.leadRef} déjà dans la séquence "${campaign.name}", exclu`,
-            );
+            leadSequenceMap.set(recipient.leadId.toString(), campaign.name);
           }
         }
       }
@@ -47,9 +47,10 @@ export class SequenceService {
         const excludedLeads = leads.filter((l) =>
           excludedLeadIds.has(l._id.toString()),
         );
-        const excludedNames = excludedLeads.map(
-          (l) => `${l.prenom} ${l.nom} (${l.ref})`,
-        );
+        const excludedNames = excludedLeads.map((l) => {
+          const sequenceName = leadSequenceMap.get(l._id.toString());
+          return `${l.prenom} ${l.nom} (${l.ref}) — déjà dans "${sequenceName}"`;
+        });
 
         return {
           success: false,

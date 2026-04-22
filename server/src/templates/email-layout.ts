@@ -104,7 +104,7 @@ export const getEmailTemplate = (
 
                             <!-- Logo (seul sur sa ligne) -->
                             <a href="https://fleuronindustries.fr/" target="_blank" style="text-decoration: none; display: block; margin-bottom: 12px;">
-                                <img src="${BASE_URL}/logo.png" alt="Fleuron Industries Pro" width="130"
+                                <img src="${BASE_URL}/numero.webp" alt="Fleuron Industries Pro" width="130"
                                     style="width: 130px; height: auto; display: block;" />
                             </a>
 
