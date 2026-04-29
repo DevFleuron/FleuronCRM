@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { X, Plus, Eye, ExternalLink, ImagePlus, Trash2 } from "lucide-react";
+import { X, Plus, Eye, ExternalLink } from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
 import { Input } from "@/src/components/ui/Input";
 import { Select } from "@/src/components/ui/Select";
@@ -32,12 +32,10 @@ export function TemplateModal({
     content: "",
     ctaText: "",
     ctaUrl: "",
-    bannerUrl: "",
   });
 
   const [showPreview, setShowPreview] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [uploadingBanner, setUploadingBanner] = useState(false);
 
   // Ref to the insert function exposed by RichTextEditor
   const insertVariableFnRef = useRef<((variable: string) => void) | null>(null);
@@ -90,45 +88,6 @@ export function TemplateModal({
     }
   };
 
-  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      showToast(
-        "error",
-        "Fichier invalide",
-        "Seules les images sont acceptées pour la bannière",
-      );
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      showToast(
-        "error",
-        "Fichier trop volumineux",
-        "La taille maximale est de 5MB",
-      );
-      return;
-    }
-    try {
-      setUploadingBanner(true);
-      const response = await ApiService.uploadAttachment(file);
-      if (response.success) {
-        setFormData((prev) => ({ ...prev, bannerUrl: response.data.url }));
-        showToast("success", "Bannière uploadée", "L'image a été ajoutée");
-      } else {
-        showToast("error", "Erreur d'upload", response.message);
-      }
-    } catch {
-      showToast("error", "Erreur", "Impossible d'uploader la bannière");
-    } finally {
-      setUploadingBanner(false);
-    }
-  };
-
-  const handleRemoveBanner = () => {
-    setFormData((prev) => ({ ...prev, bannerUrl: "" }));
-  };
-
   useEffect(() => {
     if (template) {
       setFormData({
@@ -138,7 +97,6 @@ export function TemplateModal({
         content: template.content,
         ctaText: template.ctaText || "",
         ctaUrl: template.ctaUrl || "",
-        bannerUrl: template.bannerUrl || "",
         attachment: template.attachment,
       });
     } else {
@@ -149,7 +107,6 @@ export function TemplateModal({
         content: "",
         ctaText: "",
         ctaUrl: "",
-        bannerUrl: "",
       });
     }
     setShowPreview(false);
@@ -383,54 +340,6 @@ export function TemplateModal({
             )}
           </div>
 
-          {/* Bannière (Email only) */}
-          {formData.type === "email" && (
-            <div className="border border-slate-700 rounded-lg p-4 bg-slate-900/50">
-              <div className="flex items-center gap-2 mb-3">
-                <ImagePlus className="w-4 h-4 text-indigo-400" />
-                <label className="text-sm font-bold text-slate-300">
-                  Bannière (optionnel)
-                </label>
-              </div>
-              <p className="text-xs text-slate-500 mb-3">
-                Image affichée en haut de l'email — format recommandé :
-                600×200px
-              </p>
-              {formData.bannerUrl ? (
-                <div className="space-y-2">
-                  <img
-                    src={formData.bannerUrl}
-                    alt="Bannière"
-                    className="w-full rounded-lg border border-slate-700 object-cover max-h-32"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleRemoveBanner}
-                    className="flex items-center gap-1.5 text-red-500 hover:text-red-400 text-sm font-medium transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    Supprimer la bannière
-                  </button>
-                </div>
-              ) : (
-                <div>
-                  <input
-                    type="file"
-                    onChange={handleBannerUpload}
-                    disabled={uploadingBanner}
-                    accept="image/*"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-500 file:text-white hover:file:bg-indigo-600 file:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                  />
-                  {uploadingBanner && (
-                    <p className="text-xs text-indigo-400 mt-2">
-                      Upload en cours...
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
           {/* CTA (Email only) */}
           {formData.type === "email" && (
             <div className="border border-slate-700 rounded-lg p-4 bg-slate-900/50">
@@ -488,7 +397,7 @@ export function TemplateModal({
                 </span>
               </button>
               {showPreview && (
-                <div className="bg-[#f4f4f4] p-4 max-h-[600px] overflow-y-auto">
+                <div className="bg-[#f4f4f4] max-h-[600px] overflow-y-auto">
                   <div
                     style={{
                       maxWidth: 600,
@@ -499,16 +408,12 @@ export function TemplateModal({
                       boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                     }}
                   >
-                    {/* Orange bar */}
-                    <div style={{ backgroundColor: "#F5771F", height: 5 }} />
                     {/* Banner */}
-                    {formData.bannerUrl && (
-                      <img
-                        src={formData.bannerUrl}
-                        alt="Bannière"
-                        style={{ width: "100%", display: "block" }}
-                      />
-                    )}
+                    <img
+                      src="https://crm.fleuronindustries.fr/banniere-mailing-relance.webp"
+                      alt="Bannière"
+                      style={{ width: "100%", display: "block" }}
+                    />
                     {/* Content */}
                     <div
                       style={{
@@ -571,7 +476,7 @@ export function TemplateModal({
                           style={{ width: 140, height: "auto" }}
                         />
                         <img
-                          src="https://fleuronindustries.fr/3660-badge.png"
+                          src="https://fleuronindustries.fr/numero.webp"
                           alt="3660"
                           style={{ width: 130, height: "auto" }}
                         />

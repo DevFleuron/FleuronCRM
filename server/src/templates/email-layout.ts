@@ -18,9 +18,10 @@ export const getEmailTemplate = (
   const { content, bannerUrl, ctaText, ctaUrl } = options;
 
   // Rendre la bannerUrl absolue si relative
-  const absoluteBannerUrl = bannerUrl?.startsWith("/")
-    ? `${BASE_URL}${bannerUrl}`
-    : bannerUrl;
+  const resolvedBannerUrl = bannerUrl ?? "/banniere-mailing-relance.webp";
+  const absoluteBannerUrl = resolvedBannerUrl.startsWith("/")
+    ? `${BASE_URL}${resolvedBannerUrl}`
+    : resolvedBannerUrl;
 
   const bannerHtml = absoluteBannerUrl
     ? `
@@ -102,11 +103,7 @@ export const getEmailTemplate = (
                                 L'ÉQUIPE FLEURON INDUSTRIES
                             </p>
 
-                            <!-- Logo (seul sur sa ligne) -->
-                            <a href="https://fleuronindustries.fr/" target="_blank" style="text-decoration: none; display: block; margin-bottom: 12px;">
-                                <img src="${BASE_URL}/numero.webp" alt="Fleuron Industries Pro" width="130"
-                                    style="width: 130px; height: auto; display: block;" />
-                            </a>
+                            
 
                             <!-- Badge 3660 (en dessous du logo) -->
                             <a href="tel:3660" style="text-decoration: none; display: block;">
