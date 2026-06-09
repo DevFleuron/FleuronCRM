@@ -397,7 +397,7 @@ export function TemplateModal({
                 </span>
               </button>
               {showPreview && (
-                <div className="bg-[#f4f4f4] max-h-[600px] overflow-y-auto">
+                <div className="bg-[#f4f4f4] max-h-150 overflow-y-auto">
                   <div
                     style={{
                       maxWidth: 600,
@@ -471,12 +471,12 @@ export function TemplateModal({
                         }}
                       >
                         <img
-                          src="https://fleuronindustries.fr/logo.png"
+                          src="https://fleuronindustries.com/logo.png"
                           alt="Fleuron Industries"
                           style={{ width: 140, height: "auto" }}
                         />
                         <img
-                          src="https://fleuronindustries.fr/numero.webp"
+                          src="https://fleuronindustries.com/numero.webp"
                           alt="3660"
                           style={{ width: 130, height: "auto" }}
                         />

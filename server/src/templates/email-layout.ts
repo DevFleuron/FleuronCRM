@@ -18,7 +18,7 @@ export const getEmailTemplate = (
   const { content, bannerUrl, ctaText, ctaUrl } = options;
 
   // Bannière : utiliser celle fournie, sinon la bannière par défaut
-  const resolvedBannerUrl = bannerUrl ?? "/banniere-mailing-relance.webp";
+  const resolvedBannerUrl = bannerUrl || "/banniere-mailing-relance.webp";
   const absoluteBannerUrl = resolvedBannerUrl.startsWith("/")
     ? `${BASE_URL}${resolvedBannerUrl}`
     : resolvedBannerUrl;
