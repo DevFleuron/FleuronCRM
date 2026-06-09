@@ -34,7 +34,7 @@ app.use(
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://192.168.1.128:3000",
-        "https://crm.fleuronindustries.fr",
+        "https://crm.fleuronindustries.com",
       ];
 
       // Autoriser les requêtes sans origin (comme Postman)

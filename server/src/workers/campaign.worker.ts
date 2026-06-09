@@ -1,7 +1,6 @@
 import Campaign from "../models/Campaign.model";
 import Lead from "../models/Lead.model";
 import { BrevoService } from "../services/brevo.service";
-import path from "path";
 
 /*
  * Traiter l'envoi d'une campagne
@@ -91,22 +90,13 @@ export async function processCampaignSending(campaignId: string) {
             lead,
           );
 
-          // Reconstruire le path de la pièce jointe depuis le filename
-          // (le path absolu stocké en DB peut être invalide après déploiement)
           const attachmentData = template.attachment?.url
-            ? {
-                filename: template.attachment.filename,
-                path: path.join(
-                  __dirname,
-                  "../../uploads/attachments",
-                  template.attachment.url.split("/").pop()!,
-                ),
-              }
+            ? BrevoService.resolveAttachmentPath(template.attachment)
             : undefined;
 
           // Rendre la bannerUrl absolue pour Brevo
           const appUrl =
-            process.env.APP_URL || "https://crm.fleuronindustries.fr";
+            process.env.APP_URL || "https://crm.fleuronindustries.com";
           const absoluteBannerUrl = template.bannerUrl?.startsWith("/")
             ? `${appUrl}${template.bannerUrl}`
             : template.bannerUrl;

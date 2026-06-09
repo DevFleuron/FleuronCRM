@@ -410,7 +410,7 @@ export function TemplateModal({
                   >
                     {/* Banner */}
                     <img
-                      src="https://crm.fleuronindustries.fr/banniere-mailing-relance.webp"
+                      src="https://crm.fleuronindustries.com/banniere-mailing-relance.webp"
                       alt="Bannière"
                       style={{ width: "100%", display: "block" }}
                     />

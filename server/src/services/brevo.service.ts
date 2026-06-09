@@ -173,6 +173,20 @@ export class BrevoService {
   }
 
   /**
+   * Résoudre le chemin absolu d'une pièce jointe depuis son URL relative
+   */
+  static resolveAttachmentPath(attachment: { filename: string; url: string }): {
+    filename: string;
+    path: string;
+  } {
+    const filename = attachment.url.split("/").pop()!;
+    return {
+      filename: attachment.filename,
+      path: path.join(__dirname, "../../uploads/attachments", filename),
+    };
+  }
+
+  /**
    * Valider un numéro de téléphone
    */
   static isValidPhoneNumber(phone: string): boolean {

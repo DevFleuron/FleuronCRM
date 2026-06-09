@@ -235,12 +235,18 @@ export class SequenceService {
           lead,
         );
 
-        // Passer l'attachment si présent
+        const attachmentData = template.attachment?.url
+          ? BrevoService.resolveAttachmentPath(template.attachment)
+          : undefined;
+
         const result = await BrevoService.sendEmail(
           lead.email,
           subject,
           content,
-          template.attachment,
+          attachmentData,
+          template.bannerUrl,
+          template.ctaText,
+          template.ctaUrl,
         );
         success = result.success;
         error = result.error;
