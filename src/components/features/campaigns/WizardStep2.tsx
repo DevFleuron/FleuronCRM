@@ -81,67 +81,74 @@ export function WizardStep2({
           </div>
 
           {/* Templates Grid */}
-          {filteredTemplates.length === 0 ? (
-            <div className="bg-[#111114] border border-slate-800 rounded-xl p-12 text-center">
-              <p className="text-slate-400">
-                Aucun template {campaignType === "sms" ? "SMS" : "Email"} trouvé
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {filteredTemplates.map((template) => (
-                <button
-                  key={template._id}
-                  onClick={() => onTemplateSelect(template._id!, campaignType)}
-                  className={cn(
-                    "bg-[#111114] border rounded-xl p-5 text-left transition-all hover:border-slate-700",
-                    selectedTemplateId === template._id
-                      ? "border-indigo-500 ring-2 ring-indigo-500/20"
-                      : "border-slate-800",
-                  )}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          template.type === "email"
-                            ? "bg-indigo-500/10 text-indigo-500"
-                            : "bg-purple-500/10 text-purple-500"
-                        }`}
-                      >
-                        {template.type === "email" ? (
-                          <Mail className="w-5 h-5" />
-                        ) : (
-                          <MessageSquare className="w-5 h-5" />
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-sm">{template.name}</h3>
-                        <p className="text-xs text-slate-500">
-                          {template.variables.length} variable
-                          {template.variables.length > 1 ? "s" : ""}
-                        </p>
-                      </div>
-                    </div>
-                    {selectedTemplateId === template._id && (
-                      <Badge variant="success">Sélectionné</Badge>
+          <div className="max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
+            {filteredTemplates.length === 0 ? (
+              <div className="bg-[#111114] border border-slate-800 rounded-xl p-12 text-center">
+                <p className="text-slate-400">
+                  Aucun template {campaignType === "sms" ? "SMS" : "Email"}{" "}
+                  trouvé
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {filteredTemplates.map((template) => (
+                  <button
+                    key={template._id}
+                    onClick={() =>
+                      onTemplateSelect(template._id!, campaignType)
+                    }
+                    className={cn(
+                      "bg-[#111114] border rounded-xl p-5 text-left transition-all hover:border-slate-700",
+                      selectedTemplateId === template._id
+                        ? "border-indigo-500 ring-2 ring-indigo-500/20"
+                        : "border-slate-800",
                     )}
-                  </div>
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            template.type === "email"
+                              ? "bg-indigo-500/10 text-indigo-500"
+                              : "bg-purple-500/10 text-purple-500"
+                          }`}
+                        >
+                          {template.type === "email" ? (
+                            <Mail className="w-5 h-5" />
+                          ) : (
+                            <MessageSquare className="w-5 h-5" />
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-sm">{template.name}</h3>
+                          <p className="text-xs text-slate-500">
+                            {template.variables.length} variable
+                            {template.variables.length > 1 ? "s" : ""}
+                          </p>
+                        </div>
+                      </div>
+                      {selectedTemplateId === template._id && (
+                        <Badge variant="success">Sélectionné</Badge>
+                      )}
+                    </div>
 
-                  {template.subject && (
-                    <p className="text-xs text-slate-500 mb-2">
-                      Objet:{" "}
-                      <span className="text-slate-400">{template.subject}</span>
+                    {template.subject && (
+                      <p className="text-xs text-slate-500 mb-2">
+                        Objet:{" "}
+                        <span className="text-slate-400">
+                          {template.subject}
+                        </span>
+                      </p>
+                    )}
+
+                    <p className="text-sm text-slate-400 line-clamp-2">
+                      {template.content}
                     </p>
-                  )}
-
-                  <p className="text-sm text-slate-400 line-clamp-2">
-                    {template.content}
-                  </p>
-                </button>
-              ))}
-            </div>
-          )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>

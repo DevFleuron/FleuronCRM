@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useEffect, useState } from "react";
-import { Search, X, Filter, Upload } from "lucide-react";
+import { Search, Filter, Upload } from "lucide-react";
 import { Select } from "@/src/components/ui/Select";
 import { DepartementSelect } from "./filters/DepartementSelect";
 import { RegionSelect } from "./filters/RegionSelect";
@@ -102,134 +102,135 @@ export function LeadFiltersBar({
         </div>
       </div>
 
-      {isExpanded && (
-        <div className="space-y-4 pt-4 border-t border-border-primary animate-slide-in">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Select
-              label="Rapport"
-              value={filters.rapport || ""}
-              onChange={(e) => handleFilterChange("rapport", e.target.value)}
-              options={RAPPORT_OPTIONS.map((opt) => ({
-                value: opt.value,
-                label: opt.label,
-              }))}
-            />
-            <Select
-              label="Source"
-              value={filters.source || ""}
-              onChange={(e) => handleFilterChange("source", e.target.value)}
-              options={[
-                { value: "", label: "Toutes les sources" },
-                ...SOURCE_OPTIONS.map((s) => ({ value: s, label: s })),
-              ]}
-            />
-            <Select
-              label="Fichier d'import"
-              value={filters.importId || ""}
-              onChange={(e) => handleFilterChange("importId", e.target.value)}
-              options={[
-                { value: "", label: "Tous les fichiers" },
-                ...imports.map((i) => ({ value: i._id, label: i.nomFichier })),
-              ]}
-            />
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wide mb-2">
-                  Du
-                </label>
-                <input
-                  type="date"
-                  value={filters.dateFrom || ""}
-                  onChange={(e) =>
-                    handleFilterChange("dateFrom", e.target.value)
-                  }
-                  className="input-base"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wide mb-2">
-                  Au
-                </label>
-                <input
-                  type="date"
-                  value={filters.dateTo || ""}
-                  onChange={(e) => handleFilterChange("dateTo", e.target.value)}
-                  className="input-base"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Select
-              label="Type Installation"
-              value={filters.typeInstallation || ""}
-              onChange={(e) =>
-                handleFilterChange("typeInstallation", e.target.value)
-              }
-              options={[
-                { value: "", label: "Tous les types" },
-                ...TYPE_INSTALLATION_OPTIONS.map((t) => ({
-                  value: t,
-                  label: t,
-                })),
-              ]}
-            />
-            <Select
-              label="SMS Envoyé"
-              value={filters.smsEnvoye || "all"}
-              onChange={(e) => handleFilterChange("smsEnvoye", e.target.value)}
-              options={SMS_EMAIL_OPTIONS}
-            />
-            <Select
-              label="Email Envoyé"
-              value={filters.emailEnvoye || "all"}
-              onChange={(e) =>
-                handleFilterChange("emailEnvoye", e.target.value)
-              }
-              options={SMS_EMAIL_OPTIONS}
-            />
-            <div className="grid grid-cols-2 gap-2">
-              <DepartementSelect
-                value={filters.departement || ""}
-                onChange={(value) =>
-                  onFiltersChange({
-                    ...filters,
-                    departement: value || undefined,
-                  })
-                }
-              />
-              <RegionSelect
-                value={filters.region || ""}
-                onChange={(value) =>
-                  onFiltersChange({ ...filters, region: value || undefined })
-                }
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4 pt-4 border-t border-border-primary">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
+      {/* Rendu toujours présent dans le DOM, visibilité gérée par CSS.
+          Ça évite que isExpanded soit réinitialisé quand le parent re-render. */}
+      <div
+        className={cn(
+          "space-y-4 pt-4 border-t border-border-primary",
+          isExpanded ? "block animate-slide-in" : "hidden",
+        )}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Select
+            label="Rapport"
+            value={filters.rapport || ""}
+            onChange={(e) => handleFilterChange("rapport", e.target.value)}
+            options={RAPPORT_OPTIONS.map((opt) => ({
+              value: opt.value,
+              label: opt.label,
+            }))}
+          />
+          <Select
+            label="Source"
+            value={filters.source || ""}
+            onChange={(e) => handleFilterChange("source", e.target.value)}
+            options={[
+              { value: "", label: "Toutes les sources" },
+              ...SOURCE_OPTIONS.map((s) => ({ value: s, label: s })),
+            ]}
+          />
+          <Select
+            label="Fichier d'import"
+            value={filters.importId || ""}
+            onChange={(e) => handleFilterChange("importId", e.target.value)}
+            options={[
+              { value: "", label: "Tous les fichiers" },
+              ...imports.map((i) => ({ value: i._id, label: i.nomFichier })),
+            ]}
+          />
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label className="block text-xs font-bold text-text-secondary uppercase tracking-wide mb-2">
+                Du
+              </label>
               <input
-                type="text"
-                placeholder="Rechercher par nom, prénom, email, téléphone, REF..."
-                value={filters.search || ""}
-                onChange={(e) => handleFilterChange("search", e.target.value)}
-                className="input-base pl-10"
+                type="date"
+                value={filters.dateFrom || ""}
+                onChange={(e) => handleFilterChange("dateFrom", e.target.value)}
+                className="input-base"
               />
             </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={onReset}
-              disabled={!hasActiveFilters}
-            >
-              Réinitialiser
-            </Button>
+            <div className="flex-1">
+              <label className="block text-xs font-bold text-text-secondary uppercase tracking-wide mb-2">
+                Au
+              </label>
+              <input
+                type="date"
+                value={filters.dateTo || ""}
+                onChange={(e) => handleFilterChange("dateTo", e.target.value)}
+                className="input-base"
+              />
+            </div>
           </div>
         </div>
-      )}
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Select
+            label="Type Installation"
+            value={filters.typeInstallation || ""}
+            onChange={(e) =>
+              handleFilterChange("typeInstallation", e.target.value)
+            }
+            options={[
+              { value: "", label: "Tous les types" },
+              ...TYPE_INSTALLATION_OPTIONS.map((t) => ({
+                value: t,
+                label: t,
+              })),
+            ]}
+          />
+          <Select
+            label="SMS Envoyé"
+            value={filters.smsEnvoye || "all"}
+            onChange={(e) => handleFilterChange("smsEnvoye", e.target.value)}
+            options={SMS_EMAIL_OPTIONS}
+          />
+          <Select
+            label="Email Envoyé"
+            value={filters.emailEnvoye || "all"}
+            onChange={(e) => handleFilterChange("emailEnvoye", e.target.value)}
+            options={SMS_EMAIL_OPTIONS}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <DepartementSelect
+              value={filters.departement || ""}
+              onChange={(value) =>
+                onFiltersChange({
+                  ...filters,
+                  departement: value || undefined,
+                })
+              }
+            />
+            <RegionSelect
+              value={filters.region || ""}
+              onChange={(value) =>
+                onFiltersChange({ ...filters, region: value || undefined })
+              }
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 pt-4 border-t border-border-primary">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
+            <input
+              type="text"
+              placeholder="Rechercher par nom, prénom, email, téléphone, REF..."
+              value={filters.search || ""}
+              onChange={(e) => handleFilterChange("search", e.target.value)}
+              className="input-base pl-10"
+            />
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onReset}
+            disabled={!hasActiveFilters}
+          >
+            Réinitialiser
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

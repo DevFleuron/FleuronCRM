@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Edit, Download, Eye } from "lucide-react";
+import { Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Lead } from "@/src/types";
 import { Button } from "@/src/components/ui/Button";
 import { useToast } from "@/src/components/contexts/ToastContext";
@@ -9,6 +9,7 @@ import { ApiService } from "@/src/lib/api";
 
 interface LeadTableProps {
   leads: Lead[];
+  loading?: boolean;
   selectedIds: string[];
   onToggleSelect: (id: string) => void;
   onToggleSelectAll: () => void;
@@ -19,10 +20,17 @@ interface LeadTableProps {
   onBulkEmail: () => void;
   onEdit?: (lead: Lead) => void;
   currentFilters?: any;
+  // Pagination
+  page: number;
+  totalPages: number;
+  total: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
 }
 
 export function LeadTable({
   leads,
+  loading = false,
   selectedIds,
   onToggleSelect,
   onToggleSelectAll,
@@ -33,6 +41,11 @@ export function LeadTable({
   onBulkEmail,
   onEdit,
   currentFilters,
+  page,
+  totalPages,
+  total,
+  pageSize,
+  onPageChange,
 }: LeadTableProps) {
   const { showToast } = useToast();
   const [showExportModal, setShowExportModal] = useState(false);
@@ -46,7 +59,6 @@ export function LeadTable({
   const handleExport = async (format: "csv" | "excel") => {
     try {
       setIsExporting(true);
-
       if (format === "csv") {
         await ApiService.exportLeadsCSV(currentFilters);
         showToast("success", "Export réussi", "Fichier CSV téléchargé");
@@ -54,10 +66,8 @@ export function LeadTable({
         await ApiService.exportLeadsExcel(currentFilters);
         showToast("success", "Export réussi", "Fichier Excel téléchargé");
       }
-
       setShowExportModal(false);
     } catch (error: any) {
-      console.error("Erreur export:", error);
       showToast("error", "Erreur", error.message);
     } finally {
       setIsExporting(false);
@@ -91,19 +101,28 @@ export function LeadTable({
     }
   };
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString("fr-FR", {
+  const formatDate = (date: Date) =>
+    new Date(date).toLocaleDateString("fr-FR", {
       day: "2-digit",
       month: "2-digit",
       year: "2-digit",
     });
-  };
+
+  // Calcul plage affichée
+  const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const to = Math.min(page * pageSize, total);
 
   return (
     <>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold">{leads.length} leads</h2>
+        <h2 className="text-xl font-bold">
+          {loading ? (
+            <span className="text-slate-400">Chargement...</span>
+          ) : (
+            `${leads.length} leads affichés`
+          )}
+        </h2>
       </div>
 
       {/* Table Desktop */}
@@ -122,79 +141,96 @@ export function LeadTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800">
-            {leads.map((lead) => (
-              <tr
-                key={lead._id}
-                className="text-sm hover:bg-slate-900/50 transition-colors"
-              >
-                <td className="py-3">
-                  <span className="font-medium text-indigo-400">
-                    {lead.ref}
-                  </span>
-                </td>
-                <td className="py-3">
-                  <div>
-                    <div className="font-medium">{formatDate(lead.date)}</div>
-                    <div className="text-xs text-slate-500">{lead.heure}</div>
-                  </div>
-                </td>
-                <td className="py-3">
-                  <div>
-                    <div className="font-medium">
-                      {lead.prenom} {lead.nom}
-                    </div>
-                    <div className="text-xs text-slate-500">{lead.source}</div>
-                  </div>
-                </td>
-                <td className="py-3">
-                  <div className="text-xs">
-                    <div className="text-slate-300">{lead.mobile}</div>
-                    {lead.email && (
-                      <div className="text-slate-500">{lead.email}</div>
-                    )}
-                  </div>
-                </td>
-                <td className="py-3">
-                  <div>
-                    <div className="font-medium text-slate-300">
-                      {lead.telepro || "-"}
-                    </div>
-                    {lead.equipe && (
-                      <div className="text-xs text-slate-500">
-                        {lead.equipe}
-                      </div>
-                    )}
-                  </div>
-                </td>
-                <td className="py-3">
-                  <span className="text-slate-400 text-xs">
-                    {lead.typeInstallation || "-"}
-                  </span>
-                </td>
-                <td className="py-3">
-                  <span
-                    className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(lead.rapport)}`}
+            {loading
+              ? // Skeleton rows
+                Array.from({ length: 10 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    {Array.from({ length: 8 }).map((_, j) => (
+                      <td key={j} className="py-3">
+                        <div className="h-4 bg-slate-800 rounded w-3/4" />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              : leads.map((lead) => (
+                  <tr
+                    key={lead._id}
+                    className="text-sm hover:bg-slate-900/50 transition-colors"
                   >
-                    {lead.rapport}
-                  </span>
-                </td>
-                <td className="py-3">
-                  {lead.observation ? (
-                    <button
-                      onClick={() =>
-                        handleViewObservation(lead.ref, lead.observation!)
-                      }
-                      className="text-indigo-400 hover:text-indigo-300 transition-colors"
-                      title="Voir l'observation"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                  ) : (
-                    <span className="text-slate-600">-</span>
-                  )}
-                </td>
-              </tr>
-            ))}
+                    <td className="py-3">
+                      <span className="font-medium text-indigo-400">
+                        {lead.ref}
+                      </span>
+                    </td>
+                    <td className="py-3">
+                      <div>
+                        <div className="font-medium">
+                          {formatDate(lead.date)}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          {lead.heure}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3">
+                      <div>
+                        <div className="font-medium">
+                          {lead.prenom} {lead.nom}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          {lead.source}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3">
+                      <div className="text-xs">
+                        <div className="text-slate-300">{lead.mobile}</div>
+                        {lead.email && (
+                          <div className="text-slate-500">{lead.email}</div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3">
+                      <div>
+                        <div className="font-medium text-slate-300">
+                          {lead.telepro || "-"}
+                        </div>
+                        {lead.equipe && (
+                          <div className="text-xs text-slate-500">
+                            {lead.equipe}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3">
+                      <span className="text-slate-400 text-xs">
+                        {lead.typeInstallation || "-"}
+                      </span>
+                    </td>
+                    <td className="py-3">
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(lead.rapport)}`}
+                      >
+                        {lead.rapport}
+                      </span>
+                    </td>
+                    <td className="py-3">
+                      {lead.observation ? (
+                        <button
+                          onClick={() =>
+                            handleViewObservation(lead.ref, lead.observation!)
+                          }
+                          className="text-indigo-400 hover:text-indigo-300 transition-colors"
+                          title="Voir l'observation"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <span className="text-slate-600">-</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
           </tbody>
         </table>
       </div>
@@ -206,7 +242,6 @@ export function LeadTable({
             key={lead._id}
             className="bg-slate-900/50 border border-slate-700 rounded-lg p-4"
           >
-            {/* Header */}
             <div className="flex items-start justify-between mb-3">
               <div>
                 <span className="font-medium text-indigo-400 block mb-1">
@@ -222,8 +257,6 @@ export function LeadTable({
                 {lead.rapport}
               </span>
             </div>
-
-            {/* Info */}
             <div className="space-y-2 text-sm mb-3">
               <div>
                 <span className="font-medium">
@@ -252,8 +285,6 @@ export function LeadTable({
                 Source: {lead.source}
               </div>
             </div>
-
-            {/* Actions */}
             <div className="flex gap-2 pt-3 border-t border-slate-700">
               {lead.observation && (
                 <button
@@ -270,6 +301,69 @@ export function LeadTable({
           </div>
         ))}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+          <span className="text-sm text-slate-400">
+            {from}–{to} sur {total} leads
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onPageChange(page - 1)}
+              disabled={page === 1 || loading}
+              className="p-2 rounded-lg border border-slate-700 text-slate-400 hover:text-white hover:border-slate-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            {/* Pages numérotées */}
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(
+                  (p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1,
+                )
+                .reduce<(number | "...")[]>((acc, p, idx, arr) => {
+                  if (idx > 0 && p - (arr[idx - 1] as number) > 1)
+                    acc.push("...");
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((p, i) =>
+                  p === "..." ? (
+                    <span
+                      key={`ellipsis-${i}`}
+                      className="px-1 text-slate-500 text-sm"
+                    >
+                      …
+                    </span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => onPageChange(p as number)}
+                      disabled={loading}
+                      className={`w-8 h-8 rounded-lg text-sm transition-colors ${
+                        p === page
+                          ? "bg-indigo-600 text-white"
+                          : "text-slate-400 hover:text-white hover:bg-slate-800"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ),
+                )}
+            </div>
+
+            <button
+              onClick={() => onPageChange(page + 1)}
+              disabled={page === totalPages || loading}
+              className="p-2 rounded-lg border border-slate-700 text-slate-400 hover:text-white hover:border-slate-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modal Observation */}
       {showObservationModal && selectedObservation && (

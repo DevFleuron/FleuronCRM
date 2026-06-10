@@ -1,88 +1,86 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { LeadFiltersBar } from "@/src/components/features/leads/LeadFilters";
 import { LeadTable } from "@/src/components/features/leads/LeadTable";
 import { LeadImportModal } from "@/src/components/features/leads/LeadImportModal";
 import { useToast } from "@/src/components/contexts/ToastContext";
 import type { Lead, LeadFilters } from "@/src/types";
 import { ApiService } from "@/src/lib/api";
-import { getDepartementsFromRegion } from "@/src/lib/regions";
+
+const PAGE_SIZE = 50;
 
 export default function LeadsPage() {
   const { showToast } = useToast();
   const [filters, setFilters] = useState<LeadFilters>({});
-  const [allLeads, setAllLeads] = useState<Lead[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const loadLeads = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await ApiService.getLeads({ all: "true" });
-      if (response.success) {
-        setAllLeads(response.data);
-      } else {
-        showToast("error", "Erreur", "Impossible de charger les leads");
+  const loadLeads = useCallback(
+    async (currentFilters: LeadFilters, currentPage: number) => {
+      try {
+        setLoading(true);
+        const params: Record<string, string> = {
+          page: String(currentPage),
+          limit: String(PAGE_SIZE),
+        };
+
+        // Mapper les filtres vers les query params attendus par le backend
+        if (currentFilters.rapport) params.rapport = currentFilters.rapport;
+        if (currentFilters.source) params.source = currentFilters.source;
+        if (currentFilters.typeInstallation)
+          params.typeInstallation = currentFilters.typeInstallation;
+        if (currentFilters.importId) params.importId = currentFilters.importId;
+        if (currentFilters.dateFrom) params.dateFrom = currentFilters.dateFrom;
+        if (currentFilters.dateTo) params.dateTo = currentFilters.dateTo;
+        if (currentFilters.smsEnvoye)
+          params.smsEnvoye = currentFilters.smsEnvoye;
+        if (currentFilters.emailEnvoye)
+          params.emailEnvoye = currentFilters.emailEnvoye;
+        if (currentFilters.departement)
+          params.departement = currentFilters.departement;
+        if (currentFilters.region) params.region = currentFilters.region;
+        if (currentFilters.search) params.search = currentFilters.search;
+
+        const response = await ApiService.getLeads(params);
+        if (response.success) {
+          setLeads(response.data);
+          setTotal(response.pagination.total);
+          setTotalPages(response.pagination.totalPages);
+        } else {
+          showToast("error", "Erreur", "Impossible de charger les leads");
+        }
+      } catch (error) {
+        showToast("error", "Erreur", "Erreur lors du chargement des leads");
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      showToast("error", "Erreur", "Erreur lors du chargement des leads");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
+  // Rechargement quand les filtres ou la page changent
   useEffect(() => {
-    loadLeads();
-  }, []);
+    loadLeads(filters, page);
+  }, [filters, page]);
 
-  useEffect(() => {
-    if (filters.importId !== undefined) {
-      loadLeads();
-    }
-  }, [filters.importId]);
+  // Réinitialiser la page à 1 quand les filtres changent
+  const handleFiltersChange = (newFilters: LeadFilters) => {
+    setFilters(newFilters);
+    setPage(1);
+    setSelectedIds([]);
+  };
 
-  const filteredLeads = useMemo(() => {
-    return allLeads.filter((lead) => {
-      if (filters.rapport && lead.rapport !== filters.rapport) return false;
-      if (filters.departement) {
-        const codePostal = (lead.codePostal || "").trim();
-        if (!codePostal.startsWith(filters.departement)) return false;
-      }
-      if (filters.region) {
-        const departements = getDepartementsFromRegion(filters.region);
-        const codePostal = (lead.codePostal || "").trim();
-        const dept = codePostal.substring(0, 2);
-        if (!departements.includes(dept)) return false;
-      }
-      if (filters.source && lead.source !== filters.source) return false;
-      if (
-        filters.typeInstallation &&
-        lead.typeInstallation !== filters.typeInstallation
-      )
-        return false;
-      if (filters.dateFrom && new Date(lead.date) < new Date(filters.dateFrom))
-        return false;
-      if (filters.dateTo && new Date(lead.date) > new Date(filters.dateTo))
-        return false;
-      if (filters.smsEnvoye === "yes" && !lead.smsEnvoye) return false;
-      if (filters.smsEnvoye === "no" && lead.smsEnvoye) return false;
-      if (filters.emailEnvoye === "yes" && !lead.emailEnvoye) return false;
-      if (filters.emailEnvoye === "no" && lead.emailEnvoye) return false;
-      if (filters.search) {
-        const s = filters.search.toLowerCase();
-        return (
-          lead.nom?.toLowerCase().includes(s) ||
-          lead.prenom?.toLowerCase().includes(s) ||
-          lead.email?.toLowerCase().includes(s) ||
-          lead.mobile?.includes(s) ||
-          lead.ref?.includes(s)
-        );
-      }
-      return true;
-    });
-  }, [allLeads, filters]);
+  const handleResetFilters = () => {
+    setFilters({});
+    setPage(1);
+    setSelectedIds([]);
+  };
 
   const handleToggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -91,21 +89,20 @@ export default function LeadsPage() {
   };
 
   const handleToggleSelectAll = () => {
-    if (selectedIds.length === filteredLeads.length) {
+    if (selectedIds.length === leads.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(filteredLeads.map((lead) => lead._id!));
+      setSelectedIds(leads.map((lead) => lead._id!));
     }
   };
-
-  const handleResetFilters = () => setFilters({});
 
   const handleImport = async (file: File) => {
     try {
       const response = await ApiService.importCSV(file);
       if (response.success) {
         showToast("success", "Import réussi !", response.message);
-        await loadLeads();
+        // Recharger la page courante avec les filtres actuels
+        loadLeads(filters, page);
       } else {
         showToast("error", "Erreur d'import", response.message);
       }
@@ -114,7 +111,7 @@ export default function LeadsPage() {
     }
   };
 
-  if (loading) {
+  if (loading && leads.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-100">
         <div className="text-center">
@@ -130,20 +127,21 @@ export default function LeadsPage() {
       <div>
         <h1 className="text-2xl md:text-3xl font-bold mb-2">Leads NRP</h1>
         <p className="text-text-secondary text-sm md:text-base">
-          Gestion et relance des clients ({filteredLeads.length} leads)
+          Gestion et relance des clients ({total} leads)
         </p>
       </div>
 
       <LeadFiltersBar
         filters={filters}
-        onFiltersChange={setFilters}
+        onFiltersChange={handleFiltersChange}
         onReset={handleResetFilters}
         onImport={() => setIsImportModalOpen(true)}
-        resultsCount={filteredLeads.length}
+        resultsCount={total}
       />
 
       <LeadTable
-        leads={filteredLeads}
+        leads={leads}
+        loading={loading}
         selectedIds={selectedIds}
         onToggleSelect={handleToggleSelect}
         onToggleSelectAll={handleToggleSelectAll}
@@ -160,6 +158,13 @@ export default function LeadsPage() {
         onBulkEmail={() =>
           showToast("info", "Email groupé", `${selectedIds.length} emails`)
         }
+        currentFilters={filters}
+        // Pagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        pageSize={PAGE_SIZE}
+        onPageChange={setPage}
       />
 
       <LeadImportModal
